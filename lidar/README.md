@@ -1,8 +1,8 @@
-# Livox雷达使用及点云数据处理
+# 雷达使用教程
 
 ***
 
-## Livox雷达使用及点云数据获取
+## 点云数据获取
 1. 安装Livox-SDK
 > 1. 安装相应的依赖库  
 >> sudo apt install cmake pkg-config libapr1-dev libboost-atomic-dev libboost-system-dev  
