@@ -366,3 +366,4 @@ def remove_duplicate_stracks(stracksa, stracksb):
     resb = [t for i, t in enumerate(stracksb) if not i in dupb]
     return resa, resb
 
+
