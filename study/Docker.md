@@ -130,5 +130,9 @@ https://docs.docker.com/engine/reference/commandline/cli/
 * 一个容器只运行一个进程  
 * 镜像层数尽可能少 
 * 将多行参数排序：按字母顺序排序  
-* 构建缓存  
+* 构建缓存 
+
+***
+
+
  
