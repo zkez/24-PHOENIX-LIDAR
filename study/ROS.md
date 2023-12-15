@@ -44,7 +44,7 @@
 > * 3. 初始化ROS节点
 > * 4. 输出日志Hello World  
 
-```python  
+```  
     #!/usr/bin/env python  # 指定解释器  
     #coding=utf-8  # 指定编码格式  
     import rospy  # 导包  
@@ -163,7 +163,7 @@
 5. 编译并执行。  
 
 ##### 发布者py文件实现  
-```python  
+```  
     #! /usr/bin/env  python  
     #-*-coding:UTF-8-*-  
     # 导包  
@@ -192,7 +192,7 @@
 ```  
 
 ##### 订阅者py文件实现  
-```python  
+```  
     #! /usr/bin/env python   # shebang行不能错，易错  
     #-*-coding:UTF-8-*-  
     # 1.导包  
@@ -255,7 +255,7 @@
 > 4. 编辑配置文件。  
 > 5. 编译并执行。  
 #### 服务端实现  
-```python  
+```  
     #! /usr/bin/env python
     #coding=utf-8
     import rospy
@@ -300,7 +300,7 @@
 ```  
 
 #### 客户端实现  
-```python  
+```  
     #! /usr/bin/env python
     #coding=utf-8
     
@@ -339,7 +339,7 @@
 
 ##### 参数操作（python）  
 1. 增 改  
-```python
+```
     #!  /usr/bin/env python
     #coding=utf-8
     # 演示参数的新增与修改
@@ -361,7 +361,7 @@
         rospy.set_param("radius_p",0.3)
 ```  
 2. 查  
-```python
+```
     #! /usr/bin/env python
     #coding=utf-8
     
@@ -415,7 +415,7 @@
         rospy.loginfo("k=%s",key)
 ```  
 3. 删  
-```python
+```
     #! /usr/bin/env python
     #coding=utf-8
     import rospy
@@ -457,5 +457,8 @@
 * rostopic pub    将数据发布到主题  
 * rostopic type   打印主题类型  
 3. 剩余自行查找相关命令  
-  
+
+***  
+
+
 
