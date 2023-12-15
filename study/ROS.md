@@ -1,6 +1,6 @@
 # ROS
 
-***
+*** 
 
 #### ROS概念
 > ROS是通讯机制、工具通讯包、机器人高层技能以及机器人生态系统的集合体。  
@@ -225,5 +225,235 @@
 
 #### 话题通信自定义msg  
 1. 定义msg文件：在功能包src中新建msg文件夹，并新建msg后缀的文件!(注意文件创建的位置）  
-2. 编辑配置文件：编辑package.xml文件；编辑CMakeLists.txt文件（层层包含）。    
+2. 编辑配置文件：编辑package.xml文件；编辑CMakeLists.txt文件（层层包含）。     
+
+***
+
+### 服务通信  
+> 基于请求响应模式：以请求响应的方式实现不同节点之间数据交互的通信模式，用于少量数据的传输场景。
+>> 具体流程（举例）：  
+>> master    管理者  （114平台）  
+>> Server/talker       服务端	（服务公司）  
+>> Client/listener     客户端	（我）  
+>> 1. 保洁公司在114平台注册自身信息，提交地址  
+>> 2. 我需要访问114平台，注册自己想要的服务（疏通下水道） 
+>> 3. 114平台进行话题匹配并将服务端的连接方式响应给客户端（电话号码） 
+>> 4. 我打电话给保洁公司  
+>> 5. 保洁公司说可以  
+
+#### 服务通信自定义srv  
+> 定义srv实现流程与自定义msg实现流程类似。  
+> 1. 按照固定格式创建srv文件  
+> 2. 编辑配置文件  
+> 3. 编译生成中间文件  
+
+#### 服务通信自定义srv调用（python版本）  
+> 流程：
+> 1. 编写服务端实现。  
+> 2. 编写客户端实现。  
+> 3. 为python文件添加可执行权限。  
+> 4. 编辑配置文件。  
+> 5. 编译并执行。  
+#### 服务端实现  
+```python  
+    #! /usr/bin/env python
+    #coding=utf-8
+    import rospy
+    #from plumbing_server_client.srv import AddInts,AddIntsRequest,AddIntsResponse
+    #也可以直接替换成*
+    from plumbing_server_client.srv import *
+    # 服务端解析客户端请求，产生响应
+    # 具体流程：
+    #     1 导包；_srv 两种方式都能成功
+    #     2 初始化ros节点
+    #     3 创建服务端对象
+    #     4 处理请求，产生响应
+    #     5 处理逻辑（回调函数）
+    #     6 spin()
     
+    #回调函数参数：封装了请求request数据
+    #返回值：响应数据response
+    def doNum(request):
+        #1 解析提交的两个整数
+        num1=request.num1
+        num2=request.num2
+        #2 进行求和
+        sum=num1+num2
+        #3 将结果封装进响应对象
+        response=AddIntsResponse()#类型
+        response.sum=sum
+        rospy.loginfo("服务器解析的数据 num1=%d.num2=%d,相应的结果:sum=%d",num1,num2,sum)
+        return response
+     
+        
+          
+    if __name__=="__main__":
+    #     2 初始化ros节点
+        rospy.init_node("heishui")
+    #     3 创建服务端对象
+        server=rospy.Service("addInts",AddInts,doNum)
+        rospy.loginfo("服务器已经启动了！")
+    #     4 处理请求，产生响应
+    #     5 处理逻辑（回调函数）
+    #     6 spin()
+        rospy.spin()
+```  
+
+#### 客户端实现  
+```python  
+    #! /usr/bin/env python
+    #coding=utf-8
+    
+    # 客户端 组织并提交请求，处理服务端响应
+    # 具体流程：
+    #     1 导包；_srv
+    #     2 初始化ros节点
+    #     3 创建客户端对象
+    #     4 组织请求的数据，并发送请求
+    #     5 处理响应
+    # 不需要spin 因为是主动提出
+    
+    import rospy
+    from plumbing_server_client.srv import *
+    
+    if __name__=="__main__":
+    #     2 初始化ros节点
+        rospy.init_node("erhei")
+    #     3 创建客户端对象
+        client=rospy.ServiceProxy("addInts",AddInts)
+    #     4 组织请求的数据，并发送请求
+        response=client.call(12,34)
+    #     5 处理响应  
+        rospy.loginfo("响应的数据：%d",response.sum)
+```  
+
+***  
+
+#### 参数服务器  
+> 基于参数共享模式：以参数共享的方式实现不同节点之间数据交互的通信模式，用于少量数据的传输场景。
+> 流程：  
+> 1. Talker 设置参数：Talker 通过 RPC 向参数服务器发送参数(包括参数名与参数值)，ROS Master 将参数保存到参数列表中。  
+> 2. Listener 获取参数：Listener 通过 RPC 向参数服务器请求参数，ROS Master 从参数列表中获取参数并返回给 Listener。  
+> 3. ROS Master 向 Listener 发送参数值：ROS Master 根据步骤2请求提供的参数名查找参数值，并将查询结果通过 RPC 发送给 Listener。  
+> * **参数服务器不是为高性能而设计的，因此最好用于存储静态的非二进制的简单数据**  
+
+##### 参数操作（python）  
+1. 增 改  
+```python
+    #!  /usr/bin/env python
+    #coding=utf-8
+    # 演示参数的新增与修改
+    #     需求：在参数服务器中设置机器人的属性，型号，半径
+    #     实现：
+    #     rospy.set_param()
+        
+    import rospy
+    
+    if __name__=="__main__":
+        rospy.init_node("param_set_p")
+        
+        #新增参数
+        rospy.set_param("type_p","xiaohaungche")
+        rospy.set_param("radius_p",0.15)
+     
+     
+       #覆盖参数
+        rospy.set_param("radius_p",0.3)
+```  
+2. 查  
+```python
+    #! /usr/bin/env python
+    #coding=utf-8
+    
+    # 演示参数的查询
+    # 查询的相关实现比较多
+            # get_param当键存在时，返回对应的值，不存在返回默认值
+            
+            # get_param_cached与上类似，只是效率高
+            
+            # get_param_names获取所有的参数的键的集合
+            
+            # has_param判断是否包含某个键
+            
+            # search_param查找某个键，并返回完整的键名
+    
+    import rospy
+    if __name__=="__main__":
+        rospy.init_node("get_param_p")
+        
+        #1. get_param
+        radius=rospy.get_param("radius_p",0.5)
+        radius2=rospy.get_param("radius_p_xxx",0.5)
+        rospy.loginfo("radius=%.2f",radius)
+        rospy.loginfo("radius2=%.2f",radius2)
+        
+        #2. # get_param_cached  效率比上面这个高
+        radius3=rospy.get_param_cached("radius_p",0.5)
+        radius4=rospy.get_param_cached("radius_p_xxx",0.5)
+        rospy.loginfo("radius3=%.2f",radius3)
+        rospy.loginfo("radius4=%.2f",radius4)
+        
+        #3.get_param_names
+        names= rospy.get_param_names()
+        for name in names:#遍历
+            rospy.loginfo("name=%s",name)
+            
+        #4. has_param
+        flag1=rospy.has_param("radius_p")
+        if flag1:
+            rospy.loginfo("radius_p 存在")
+        else:
+            rospy.loginfo("radius_p 不存在")
+        flag2=rospy.has_param("radius_pxx")
+        if flag2:
+            rospy.loginfo("radius_pxx 存在")
+        else:
+            rospy.loginfo("radius_pxx 不存在")
+            
+        #5. search_param 查找是否存在，存在返回键名
+        key=rospy.search_param("radius_p")
+        rospy.loginfo("k=%s",key)
+```  
+3. 删  
+```python
+    #! /usr/bin/env python
+    #coding=utf-8
+    import rospy
+    
+    if __name__=="__main__":
+        rospy.init_node("del_param_p")
+        #使用try 捕获一下异常
+        try:
+            #删除参数
+            rospy.delete_param("radius_p")
+        except Exception as e:
+            rospy.loginfo("被删除的参数不存在")
+```  
+
+***  
+
+### ROS常用命令  
+> rosnode :  操作节点  
+> rostopic : 操作话题  
+> rosservice : 操作服务  
+> rosparam : 操作参数   
+> rosmsg : 操作msg消息  
+> rossrv : 操作srv消息  
+1. rosnode  
+* rosnode ping：测试到节点的连接状态  
+* rosnode list：列出活动节点  
+* rosnode info：打印节点信息  
+* rosnode machine：列出指定设备上的节点  
+* rosnode kill：杀死某个节点  
+* rosnode cleanup：清除无用节点  
+2. rostopic  
+* rostopic bw     显示主题使用的带宽  
+* rostopic delay  显示带有 header 的主题延迟  
+* rostopic echo   打印消息到屏幕  （自定义消息需要先到工作空间下）  
+* rostopic find   根据类型查找主题  
+* rostopic hz     显示主题的发布频率  
+* rostopic info   显示主题相关信息  
+* rostopic list   显示所有活动状态下的主题  
+* rostopic pub    将数据发布到主题  
+* rostopic type   打印主题类型  
+3. 剩余自行查找相关命令  
