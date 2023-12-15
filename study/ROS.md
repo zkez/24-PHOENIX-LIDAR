@@ -44,20 +44,20 @@
 > * 3. 初始化ROS节点
 > * 4. 输出日志Hello World  
 
-'''python  
+```python  
     #!/usr/bin/env python  # 指定解释器  
     #coding=utf-8  # 指定编码格式  
     import rospy  # 导包  
     if __name__ == '__main__':  # 主入口  
         rospy.init_node('hello_world')  # 初始化ROS节点  
         rospy.loginfo('Hello World')  # 输出日志Hello World  
-'''  
+```  
 
 2. 为python文件添加可执行权限  
 > chmod +x hello_world.py  
 
 3. 编辑ros包下的CMakeLists.txt文件  
-> catkin_install_python(PROGRAMS scripts/hello_world.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})  
+> catkin_install_python(PROGRAMS scr ipts/hello_world.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})  
 
 4. 进入工作空间目录并编译  
 > cd ~/catkin_ws  
@@ -163,7 +163,7 @@
 5. 编译并执行。  
 
 ##### 发布者py文件实现  
-'''python  
+```python  
     #! /usr/bin/env  python  
     #-*-coding:UTF-8-*-  
     # 导包  
@@ -189,10 +189,10 @@
             msg.data="hello"  
         # 发布数据  
             pub.publish(msg)  
-'''  
+```  
 
 ##### 订阅者py文件实现  
-'''python  
+```python  
     #! /usr/bin/env python   # shebang行不能错，易错  
     #-*-coding:UTF-8-*-  
     # 1.导包  
@@ -217,7 +217,7 @@
             # 4.回调函数处理数据  
             # 5.spin()  
             rospy.spin()   
-'''
+```
 
 **建议自己手敲一遍**  
 
