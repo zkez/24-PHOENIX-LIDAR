@@ -12,8 +12,28 @@
 > 丰富的组件化工具包：ROS可采用组件化方式集成一些工具和软件到系统中并作为一个组件直接使用，如RVIZ（3D可视化工具），开发者根据ROS定义的接口在其中显示机器人模型等，组件还包括仿真环境和消息查看工具等。  
 
 ### 一键安装ROS
-> wget http://fishros.com/install -O fishros && bash fishros
+> * wget http://fishros.com/install -O fishros && bash fishros  
 
+> * 基于ubuntu22.04使用docker配置ros-noetic版本:  
+```
+1. docker pull ubuntu:20.04  
+2. docker run -it --name ros -v --net=host ubuntu:20.04 /bin/bash  
+3. apt-get update  
+4. apt-get install -y lsb-release gnupg2  
+5. sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'  
+6. apt-get install -y curl  
+7. curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc  
+8. apt-get update  
+9. apt-get install ros-noetic-desktop  
+10. echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc  
+11. source ~/.bashrc  
+12. apt-get install -y python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool  
+13. apt-get install pip  
+14. pip install rosdepc  
+15. rosdepc init  
+16. rosdepc update  
+17. roscore(验证是否成功)  
+```
 
 ## 编写ROS程序
 * 先创建一个工作空间
