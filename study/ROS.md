@@ -17,7 +17,7 @@
 > * 基于ubuntu22.04使用docker配置ros-noetic版本:  
 ```
 1. docker pull ubuntu:20.04  
-2. docker run -it --name ros --device=/dev/dri -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v /home/zk:/home/zk --net=host ubuntu:20.04 /bin/bash  
+2. docker run -it --name ros --device=/dev/dri -e DISPLAY=$DISPLAY --group-add video -v /tmp/.X11-unix:/tmp/.X11-unix -v /home/zk:/home/zk --net=host ubuntu:20.04 /bin/bash  
 3. apt-get update  
 4. apt-get install -y lsb-release gnupg2  
 5. sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'  
