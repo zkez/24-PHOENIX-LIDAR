@@ -1,7 +1,8 @@
 import os
 import cv2
 import numpy as np
-from camera.camera import Camera_Thread, read_yaml
+from camera.camera import CameraThread
+from camera.common import read_yaml
 from macro import LOCATION_SAVE_DIR, location_targets
 from datetime import datetime
 
@@ -35,7 +36,7 @@ def __callback__(event, x, y, flags, param):
         cv2.circle(param["pick_img"], (x, y), 2, (0, 255, 0), 1)
 
 
-def locate_pick(cap:Camera_Thread, enemy, camera_type, home_size=False, video_test=False):
+def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_test=False):
     """
     手动四点标定
     :param cap:Camera_Thread object
@@ -67,6 +68,7 @@ def locate_pick(cap:Camera_Thread, enemy, camera_type, home_size=False, video_te
         b_lt = location_targets[location_type]['b_lt']
 
     K_0, C_0 = read_yaml(camera_type)[1:3]
+
     # 窗口下方提示标定哪个目标
     tips = \
     {
@@ -75,18 +77,20 @@ def locate_pick(cap:Camera_Thread, enemy, camera_type, home_size=False, video_te
         '10': ['blue_base', 'red_outpost', 'r_right_top', 'r_left_top'],
         '11': ['blue_outpost', 'blue_base', 'r_right_top', 'r_left_top'],
     }
+
     # 设定世界坐标
     if enemy == 0:  # enemy is red
         if camera_type == 0:  # right camera
-            ops = np.float64([red_base,blue_outpost,b_rt,b_lt])
+            ops = np.float64([red_base, blue_outpost, b_rt, b_lt])
         else:  # left camera
             ops = np.float64([red_outpost, red_base, b_rt, b_lt])
     else:  # enemy is blue
         if camera_type == 0:  # right camera
-            ops = np.float64([blue_base,red_outpost,r_rt,r_lt])
+            ops = np.float64([blue_base, red_outpost, r_rt, r_lt])
         else:  # left camera
             ops = np.float64([blue_outpost, blue_base, r_rt, r_lt])
     ops = ops.reshape(4, 1, 3)
+
     r, frame = cap.read()
     if not cap.is_open():
         return False, None, None
@@ -175,7 +179,7 @@ def locate_pick(cap:Camera_Thread, enemy, camera_type, home_size=False, video_te
         if not cap.is_open():
             cv2.destroyWindow(info["pick_win_name"])
             cv2.destroyWindow(info["zoom_win_name"])
-            return False,None,None
+            return False, None, None
         info["pick_img"] = frame
 
     pick_point = np.float64(pick_point).reshape(-1,1, 2)
@@ -215,7 +219,7 @@ def locate_record(camera_type, enemy, save=False, rvec=None, tvec=None):
     if save:
         filename = "{0}_{1}_{2}_{3}.txt".format(max_order+1,camera_type,enemy,
                                                 datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-        with open(os.path.join(LOCATION_SAVE_DIR,filename),'w') as _log_f:
+        with open(os.path.join(LOCATION_SAVE_DIR, filename), 'w') as _log_f:
             _log_f.write("#rvec\n")
             _log_f.write(f"{float(rvec[0]):0.5f} {float(rvec[1]):0.5f} {float(rvec[2]):0.5f}\n")
             _log_f.write("#tvec\n")
@@ -223,11 +227,11 @@ def locate_record(camera_type, enemy, save=False, rvec=None, tvec=None):
     elif max_order > -1:
         # 读取模型，若文件不为空
         flag = True
-        pose = np.loadtxt(os.path.join(LOCATION_SAVE_DIR,max_file),delimiter=' ').reshape(2,3)
+        pose = np.loadtxt(os.path.join(LOCATION_SAVE_DIR, max_file), delimiter=' ').reshape(2, 3)
         rvec = pose[0]
         tvec = pose[1]
 
-    return flag,rvec,tvec
+    return flag, rvec, tvec
 
 
 

@@ -135,7 +135,7 @@ class Static_UART:
     @staticmethod
     def xy_check(x: float, y: float, ):
         """
-        将传入坐标（x,y,）转换为相对于真实场地的坐标值x,y
+        将传入坐标（x,y）转换为相对于真实场地的坐标值x,y
         """
         new_x = x * Static_UART.real_width / Static_UART.home_width
         new_y = y * Static_UART.real_height / Static_UART.home_height

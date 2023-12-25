@@ -1,11 +1,29 @@
 enemy: int = 1  # 0:red, 1:blue
 home_test = False
+debug = False
+
 CAMERA_CONFIG_DIR = 'Camera_config'
 CACHE_CONFIG_SAVE_DIR = 'save_stuff'
 preview_location = [(100, 100)]
 PC_STORE_DIR = '/home/zk/new_HDU/save_stuff/points'
 LIDAR_TOPIC_NAME = '/livox/lidar'
 LOCATION_SAVE_DIR = 'save_stuff/position'
+
+armor_list = ['R1', 'R2', 'R3', 'R4', 'R5', 'B1', 'B2', 'B3', 'B4', 'B5']  # 雷达站实际考虑的各个装甲板类
+img_sz = [3088, 2064]
+
+VIDEO_SAVE_DIR = 'save_stuff/video'
+MAP_PATH = 'save_stuff/map.jpg'
+# NET_PATH = 'weights/detail_best.pt'
+NET_PATH = '/home/zk/single_version/network/RM_4_points_yolov5/weights/rm-net.pt'
+model_imgsz = (640, 640)
+map_size = [999, 542]
+
+position_choice = 'y'
+
+color2enemy = {"red": 0, "blue": 1}
+enemy2color = ['red', 'blue']
+
 
 location_targets = {
     # enemy:red

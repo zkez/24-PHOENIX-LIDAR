@@ -1,3 +1,4 @@
+#coding=utf-8
 import platform
 from ctypes import *
 from threading import local

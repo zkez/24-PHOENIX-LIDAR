@@ -1,34 +1,12 @@
 import cv2
-import yaml
 import numpy as np
 from datetime import datetime
 
-import mvsdk
-from macro import CAMERA_CONFIG_DIR, CACHE_CONFIG_SAVE_DIR, preview_location
+from camera import mvsdk
+from macro import CACHE_CONFIG_SAVE_DIR, preview_location
 
 
-def read_yaml(camera_type):
-    """
-    读取相机标定参数,包含外参，内参，以及关于雷达的外参
-    :param camera_type: 相机编号
-    :return: 读取成功失败标志位，相机内参，畸变系数，和雷达外参，相机图像大小
-    """
-    yaml_path = "{0}/camera_{1}.yaml".format(CAMERA_CONFIG_DIR, camera_type)
-    try:
-        with open(yaml_path, 'rb') as f:
-            res = yaml.load(f, Loader=yaml.FullLoader)
-            K_0 = np.float32(res["K_0"]).reshape(3, 3)
-            C_0 = np.float32(res["C_0"])
-            E_0 = np.float32(res["E_0"]).reshape(4, 4)
-            imgsize = tuple(res['ImageSize'])
-
-        return True, K_0, C_0, E_0, imgsize
-    except Exception as e:
-        print("[ERROR] {0}".format(e))
-        return False, None, None, None, None
-
-
-class Camera_Thread:
+class CameraThread:
     def __init__(self, camera_type, load_path: str = None, strict_mode=False):
         self._camera_type = camera_type
         self._date = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
@@ -62,7 +40,7 @@ class Camera_Thread:
         cap = None
         init_flag = False
         try:
-            cap = HT_Camera(camera_type, date, self.strict_mode)
+            cap = HTCamera(camera_type, date, self.strict_mode)
             r, frame = cap.read()  # read once to examine whether the cap is working
             assert r, "[INFO] Camera not init"  # 读取失败则报错
             r, frame = cap.read()
@@ -99,7 +77,7 @@ class Camera_Thread:
             self._open = False
 
 
-class HT_Camera:
+class HTCamera:
     def __init__(self, camera_type=0, path=None, strict_mode=False):
         """
         相机驱动类
@@ -242,7 +220,7 @@ class HT_Camera:
         mvsdk.CameraAlignFree(self.pFrameBuffer)
 
 
-def tune_exposure(cap: HT_Camera, date, high_reso=False):
+def tune_exposure(cap: HTCamera, date, high_reso=False):
     """
     :param cap: camera target
     :param high_reso: 采用微秒/毫秒为单位调整曝光时间
@@ -307,23 +285,5 @@ def tune_exposure(cap: HT_Camera, date, high_reso=False):
     print(f"finish set analog gain {g1}")
     cv2.destroyWindow("exposure press q to exit")
 
-
-if __name__ == "__main__":
-    ht = Camera_Thread(0)
-    tune_exposure(ht.cap, ht._date, high_reso=True)
-    mvsdk.CameraReadParameterFromFile(ht.cap.hCamera, '')
-    while 1:
-        ret, frame = ht.read()
-        cv2.namedWindow("test", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("test", 1280, 960)
-        cv2.imshow('test', frame)
-
-        key = cv2.waitKey(1)
-        if key == ord('s'):
-            mvsdk.CameraReadParameterFromFile(ht.cap.hCamera, '')
-        elif key == ord('q'):
-            break
-    ht.release()
-    cv2.destroyAllWindows()
 
 
