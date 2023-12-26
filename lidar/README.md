@@ -100,7 +100,7 @@
 > 1.3. 下载源码，准备编译  
 >> git clone https://github.com/Livox-SDK/livox_camera_lidar_calibration.git  
 >> cd camera_lidar_calibration  
->> catkin_make  
+>> catkin_make(编译前请在CMakeLists.txt里增加:set(CMAKE_CXX_STANDARD 14))  
 >> source devel/setup.bash  
 > 
 > 1.4. 程序节点概括  
