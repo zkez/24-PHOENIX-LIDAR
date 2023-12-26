@@ -35,7 +35,7 @@ class DepthQueue(object):
         self.C_0 = C_0
         self.E_0 = E_0
         self.rvec = cv2.Rodrigues(E_0[:3, :3])[0]
-        self.tvec = E_0[:3, :3]
+        self.tvec = E_0[:3, 3]
         self.init_flag = False
 
     def push_back(self, pc: np.array):
@@ -90,7 +90,7 @@ class DepthQueue(object):
 
     def detect_depth(self, rects):
         """
-        :param rects: List of the armor bounding box with format (x0,y0,w,h)
+        :param rects: List of the armor bounding box with format (x0,y0,x1,y1)
         :return: an array, the first dimension is the amount of armors input, and the second is the location data (x0,y0,z)
         x0,y0是中心点在归一化相机平面的坐标前两位，z为其对应在相机坐标系中的z坐标值
         """
@@ -128,7 +128,7 @@ class Radar(object):
         """
         if not Radar.__init_flag:
             # 当雷达还未有一个对象时，初始化接收节点
-            # Radar.__laser_listener_begin(LIDAR_TOPIC_NAME)  # 初始化接受节点
+            Radar.__laser_listener_begin(LIDAR_TOPIC_NAME)  # 初始化接受节点
             Radar.__init_flag = True
             Radar.__threading = threading.Thread(target=Radar.__main_loop, daemon=True)
 
@@ -155,65 +155,52 @@ class Radar(object):
             stop_thread(Radar.__threading)
             Radar.__working_flag = False
 
-        # @staticmethod
-        # def __callback(pc):
-        '''
-        # 子线程函数，对于/livox/lidar topic数据的处理
-        子线程函数，对于魔改SDK获取的xyz数据的处理
-        '''
-        # if Radar.__working_flag:
-        #    Radar.__lock.acquire()
-
     @staticmethod
-    def __callback(pc):
-        dist = np.linalg.norm(pc, axis=1)
+    def __callback(data):
+        """
+        子线程函数，对于/livox/lidar topic数据的处理
+        """
+        if Radar.__working_flag:
+            Radar.__lock.acquire()
 
-        pc = pc[dist > 0.4]  # 雷达近距离滤除
-        # do record
-        if Radar.__record_times > 0:
+            pc = np.float32(point_cloud2.read_points_list(data, field_names=("x", "y", "z"), skip_nans=True)).reshape(-1, 3)
 
-            Radar.__record_list.append(pc)
-            print("[INFO] recording point cloud {0}/{1}".format(Radar.__record_max_times - Radar.__record_times,
-                                                                Radar.__record_max_times))
-            if Radar.__record_times == 1:
-                try:
-                    if not os.path.exists(PC_STORE_DIR):
-                        os.mkdir(PC_STORE_DIR)
-                    with open("{0}/{1}.pkl"
-                                      .format(PC_STORE_DIR,
-                                              datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M')),
-                              'wb') as f:
-                        pkl.dump(Radar.__record_list, f)
-                    Radar.__record_list.clear()
-                    print("[INFO] record finished")
-                except:  # 当出现磁盘未挂载等情况，导致文件夹都无法创建
-                    print("[ERROR] The point cloud save dir even doesn't exist on this computer!")
-            Radar.__record_times -= 1
-        # update every class object's queue
-        for q in Radar.__queue:
-            q.push_back(pc)
+            dist = np.linalg.norm(pc, axis=1)
 
-        Radar.__lock.release()
+            pc = pc[dist > 0.4]  # 雷达近距离滤除
+            # do record
+            if Radar.__record_times > 0:
+
+                Radar.__record_list.append(pc)
+                print("[INFO] recording point cloud {0}/{1}".format(Radar.__record_max_times - Radar.__record_times, Radar.__record_max_times))
+                if Radar.__record_times == 1:
+                    try:
+                        if not os.path.exists(PC_STORE_DIR):
+                            os.mkdir(PC_STORE_DIR)
+                        with open("{0}/{1}.pkl".format(PC_STORE_DIR, datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M')),
+                                  'wb') as f:
+                            pkl.dump(Radar.__record_list, f)
+                        Radar.__record_list.clear()
+                        print("[INFO] record finished")
+                    except:  # 当出现磁盘未挂载等情况，导致文件夹都无法创建
+                        print("[ERROR] The point cloud save dir even doesn't exist on this computer!")
+                Radar.__record_times -= 1
+            # update every class object's queue
+            for q in Radar.__queue:
+                q.push_back(pc)
+
+            Radar.__lock.release()
 
     @staticmethod
     def __laser_listener_begin(laser_node_name="/livox/lidar"):
        rospy.init_node('laser_listener', anonymous=True)
        rospy.Subscriber(laser_node_name, PointCloud2, Radar.__callback)
 
-    # @staticmethod
-    # def __laser_listener_begin():
-    #    # 从xyz文件加载点云数据
-    #    pcd = o3d.io.read_point_cloud("/home/zk/livox_lvx_pcd/Getxyz/build/lidar_lvx_file/test.txt", format='xyz')
-    #    pc = np.asarray(pcd.points)
-
-    # @staticmethod
-    # def __main_loop():
-    #     # 通过将spin放入子线程来防止其对主线程的阻塞
-    #     rospy.spin()
-    #     # 当spin调用时，subscriber就会开始轮询接收所订阅的节点数据，即不断调用callback函数
-    #     while(1):
-    #         pc = np.asarray(pcd.points)
-    #         Radar.__callback(pc)
+    @staticmethod
+    def __main_loop():
+        # 通过将spin放入子线程来防止其对主线程的阻塞
+        rospy.spin()
+        # 当spin调用时，subscriber就会开始轮询接收所订阅的节点数据，即不断调用callback函数
 
     @staticmethod
     def start_record():
@@ -278,62 +265,6 @@ def stop_thread(thread):
     _async_raise(thread.ident, SystemExit)
 
 
-if __name__ == '__main__':
-    from camera.camera import Camera_Thread
-    from camera.camera import read_yaml
-    import traceback
-    from camera import mvsdk
-
-    def debug_callback(event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            param['position'] = (x, y)
-            param['whether_detect_depth'] = True
-
-    _, K_0, C_0, E_0, imgsz = read_yaml(0)
-    ra = Radar(K_0, C_0, E_0, imgsz=imgsz)
-
-    Radar.start()
-
-    cv2.namedWindow("out", cv2.WINDOW_NORMAL)  # 显示雷达深度图
-    cv2.namedWindow("img", cv2.WINDOW_NORMAL)  # 显示实际图片
-    # info: the parameters of the mouse_event feedback
-    info = {}
-    info["position"] = (0, 0)
-    info['whether_detect_depth'] = False
-    cv2.setMouseCallback('img', debug_callback, info)
-
-    cap = Camera_Thread(0, strict_mode=False)
-    mvsdk.CameraReadParameterFromFile(cap.cap.hCamera, '/home/zk/HDU/')
-
-    try:
-        flag, frame = cap.read()
-        # 选定一个ROI区域来测深度
-        cv2.imshow("img", frame)
-        # rect = cv2.selectROI("img", frame, False)
-        key = cv2.waitKey(1)
-        while (flag and key != ord('q') & 0xFF):
-
-            depth = ra.read()  # 获得深度图
-            # cv2.rectangle(frame, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), (0, 255, 0), 3)
-            # cv2.rectangle(depth, (rect[0], rect[1]), (rect[0] + rect[2], rect[1] + rect[3]), 255, 3)
-
-            cv2.imshow("out", depth)
-            cv2.imshow("img", frame)
-            if info["whether_detect_depth"]:
-                x, y = info['position']
-                print(x, y)
-                depth_info = depth[x][y]
-                print('The depth of the choosed point is: ', depth_info)
-                info['whether_detect_depth'] = False
-
-            if key == ord('r') & 0xFF:
-                # 重选区域
-                rect = cv2.selectROI("img", frame, False)
-
-            key = cv2.waitKey(1)
-            flag, frame = cap.read()
-    except:
-        traceback.print_exc()
 
 
 

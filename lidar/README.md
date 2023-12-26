@@ -154,5 +154,9 @@
 > 6.2. 点云着色:在colorLidar.launch文件中配置点云和照片的路径，运行指令，可以在rviz中检查着色的效果。  
 >> roslaunch camera_lidar_calibration colorLidar.launch.  
 
+*标定优化可以参考21上交的（待后续尝试）*
+***
+
+
 
 
