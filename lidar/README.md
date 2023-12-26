@@ -111,7 +111,7 @@
 > * getExt2 - 计算外参节点２，同时优化内参和外参  
 > * projectCloud - 把雷达点云投影到照片上  
 > * colorLidar - 雷达点云着色  
-2. 相机内参标定  
+2. 相机内参标定   
 > 2.1. 准备20张以上的照片数据，各个角度和位置都要覆盖，拍摄的时候不要距离太近(3米左右)。  
 > 2.2. 获得照片数据后，配置cameraCalib.launch中对应的路径和参数，默认是把照片数据放在data/camera/photos下，然后在data/camera/in.txt中写入所有需要使用的照片名称。  
 > 2.3. roslaunch camera_lidar_calibration cameraCalib.launch  
