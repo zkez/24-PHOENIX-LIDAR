@@ -1,13 +1,12 @@
 import cv2
 import traceback
 import numpy as np
-import sys
-sys.path.append('/home/zk/zk/')
+
 from camera.camera import CameraThread
 from camera.common import read_yaml
 from Calibration.location import locate_pick
 from lidar.Lidar import Radar
-from camera.camera import tune_exposure
+
 
 if __name__ == '__main__':
     # 测试demo 同时也是非常好的测距测试脚本
