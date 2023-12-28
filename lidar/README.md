@@ -8,7 +8,7 @@
 > 1. 安装相应的依赖库  
 >> sudo apt install cmake pkg-config libapr1-dev libboost-atomic-dev libboost-system-dev  
 > 2. 从GitHub克隆Livox-SDK/Livox-SDK存储库  
->> git clone https://github.com/Livox-SDK/Livox-SDK.git  
+ >> git clone https://github.com/Livox-SDK/Livox-SDK.git  
 > 3. 在build目录下编译并安装Livox-SDK  
 >> cd Livox-SDK/build  
 >> cmake ..  

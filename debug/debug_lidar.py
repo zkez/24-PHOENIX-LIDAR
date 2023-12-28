@@ -60,7 +60,7 @@ if __name__ == '__main__':
                 # 显示世界坐标系和相机坐标系坐标和深度，以对测距效果进行粗略测试
                 cp = ra.detect_depth([rect]).reshape(-1)
 
-                cp = ( T @ np.concatenate(
+                cp = (T @ np.concatenate(
                     [np.concatenate([cp[:2], np.ones(1)], axis=0) * cp[2], np.ones(1)], axis=0))[:3]
 
                 cp_eye = (np.eye(4) @ np.concatenate(

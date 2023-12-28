@@ -7,7 +7,7 @@ from macro import LOCATION_SAVE_DIR, location_targets
 from datetime import datetime
 
 
-def __callback__(event, x, y, flags, param):
+def __callback_1(event, x, y, flags, param):
     """
     鼠标回调函数
     鼠标点击点：确认标定点并在图像上显示
@@ -39,7 +39,7 @@ def __callback__(event, x, y, flags, param):
 def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_test=False):
     """
     手动四点标定
-    :param cap:Camera_Thread object
+    :param cap:CameraThread object
     :param enemy:enemy number
     :param camera_type:camera number
     :param home_size: 选用在家里测试时的尺寸
@@ -116,7 +116,7 @@ def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_tes
     cv2.namedWindow(info["zoom_win_name"], cv2.WINDOW_NORMAL)
     cv2.resizeWindow(info["zoom_win_name"], 400, 400)
     cv2.setWindowProperty(info["zoom_win_name"], cv2.WND_PROP_TOPMOST, 1)
-    cv2.setMouseCallback("pick_corner", __callback__, info)
+    cv2.setMouseCallback("pick_corner", __callback_1, info)
 
     pick_point = []
     while True:
@@ -207,7 +207,7 @@ def locate_record(camera_type, enemy, save=False, rvec=None, tvec=None):
     if not os.path.exists(LOCATION_SAVE_DIR):
         os.mkdir(LOCATION_SAVE_DIR)
     for f in os.listdir(LOCATION_SAVE_DIR):
-        order,f_camera_type,f_enemy,_ = f.split('_')
+        order, f_camera_type, f_enemy, _ = f.split('_')
         order = int(order)
         f_camera_type = int(f_camera_type)
         f_enemy = int(f_enemy)
