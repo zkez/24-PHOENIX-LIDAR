@@ -1,11 +1,11 @@
 import serial
 import numpy as np
-import offical_Judge_Handler
+from serial_package import offical_Judge_Handler
 import binascii  # 在BIN(二进制)和ASCII之间转换
 import struct  # 将数据作为完整的结构传输，用struct模块进行处理
 from binascii import *
 from crcmod import *
-from offical_Judge_Handler import crc16Add
+from serial_package.offical_Judge_Handler import crc16Add
 import time
 
 buffercnt = 0

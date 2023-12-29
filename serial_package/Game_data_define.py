@@ -6,6 +6,7 @@
 
 import numpy as np
 
+
 class game_state:
     def __init__(self):
         game_state.game_type = 4

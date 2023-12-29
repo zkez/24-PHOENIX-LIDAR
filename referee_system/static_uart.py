@@ -4,7 +4,7 @@ import struct  # 将数据作为完整的结构传输，用struct模块进行处
 from binascii import *
 from crcmod import *
 import time
-from serial_package.offical_Judge_Handler import *
+from serial_package import offical_Judge_Handler
 import numpy as np
 import copy
 import threading
