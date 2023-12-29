@@ -360,22 +360,4 @@ class Robomst_UART:
                 time.sleep(0.1)
 
 
-if __name__ == "__main__":
-    ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=0.01)
-
-    pred_loc = np.array([[7, 4, 3],
-                         [1, 7, 1]])
-    uart = Robomst_UART()
-    # uart.Robot_Data_Transmit_Map(ser, pred_loc)
-
-    dataID = 0x020F
-    receive_id = 103
-
-    while 1:
-        # read(ser=ser)
-        # uart.Referee_Transmit_BetweenCar(dataID=dataID, ReceiverId=receive_id, data=[0, 1, 2, 3], ser=ser)
-        # time.sleep(0.1)
-        # uart.Robot_Data_Transmit_Map(ser, pred_loc)
-        uart.radar_between_car(data=[0, 8, 9, 3], data_id=dataID, datalenth=4, receiver_id=receive_id, ser=ser)
-        time.sleep(0.1)
 

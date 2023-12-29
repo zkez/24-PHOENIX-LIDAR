@@ -4,7 +4,7 @@ import struct  # 将数据作为完整的结构传输，用struct模块进行处
 from binascii import *
 from crcmod import *
 import time
-import offical_Judge_Handler
+from serial_package.offical_Judge_Handler import *
 import numpy as np
 import copy
 import threading
@@ -205,24 +205,4 @@ class Static_UART:
             if Static_UART.stop_flag:
                 break
 
-
-if __name__ == "__main__":
-    import threading
-    import copy
-
-    ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=0.01)
-    pred_loc1 = np.array([
-        [104, 2.8346, 0.06]])
-    alarm_thread = threading.Thread(target=Static_UART.advanced_loop, args=(ser,))
-    alarm_thread.start()
-
-    # counter = 0
-    # whole_pred = [pred_loc1, pred_loc2]
-    # Static_UART.push_loc(pred_loc1)
-
-    while 1:
-        Static_UART.push_loc(pred_loc1)
-        # Static_UART.push_alarm(pred_loc1)
-        # Static_UART.Robot_map_debug(ser)
-        # Static_UART.radar_between_car([2, 3, 1, 0], datalenth=4, receiver_id=104, ser=ser)
 
