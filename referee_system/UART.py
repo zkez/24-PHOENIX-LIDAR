@@ -8,7 +8,7 @@ from crcmod import *
 from serial_package.offical_Judge_Handler import crc16Add
 import time
 
-buffercnt = 0
+bufferCount = 0
 buffer = [0]
 buffer *= 1000
 cmdID = 0
@@ -16,180 +16,71 @@ indecode = 0
 
 
 def read(ser):
-    global buffercnt
-    buffercnt = 0
+    global bufferCount
+    bufferCount = 0
     global buffer
     global cmdID
     global indecode
-    # TODO:qt thread
 
     while True:
         s = ser.read(1)
         s = int().from_bytes(s, 'big')
-        # doc.write('s: '+str(s)+'        ')
 
-        if buffercnt > 50:
-            buffercnt = 0
+        if bufferCount > 50:
+            bufferCount = 0
 
-        print(buffercnt)
-        buffer[buffercnt] = s
-        # doc.write('buffercnt: '+str(buffercnt)+'        ')
-        # doc.write('buffer: '+str(buffer[buffercnt])+'\n')
-        print(hex(buffer[buffercnt]))
+        print(bufferCount)
+        buffer[bufferCount] = s
 
-        if buffercnt == 0:
-            if buffer[buffercnt] != 0xa5:
-                buffercnt = 0
+        print(hex(buffer[bufferCount]))
+
+        if bufferCount == 0:
+            if buffer[bufferCount] != 0xa5:
+                bufferCount = 0
                 continue
 
-        if buffercnt == 5:
+        if bufferCount == 5:
             if offical_Judge_Handler.myVerify_CRC8_Check_Sum(id(buffer), 5) == 0:
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
+                bufferCount = 0
+                if buffer[bufferCount] == 0xa5:
+                    bufferCount = 1
                 continue
 
-        if buffercnt == 7:
+        if bufferCount == 7:
             cmdID = (0x0000 | buffer[5]) | (buffer[6] << 8)
             print("cmdID")
             print(cmdID)
 
-        if buffercnt == 10 and cmdID == 0x0002:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
-                Referee_Game_Result()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 20 and cmdID == 0x0001:
-
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 20):
-                # 比赛阶段信息
-                UART_passer.Referee_Update_GameData()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 41 and cmdID == 0x0003:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 41):
-                # 各车血量
-                UART_passer.Referee_Robot_HP()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 12 and cmdID == 0x0004:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 12):
-                Referee_dart_status()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 13 and cmdID == 0x0101:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 13):
-                Referee_event_data()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 13 and cmdID == 0x0102:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 13):
-                Refree_supply_projectile_action()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 11 and cmdID == 0x0104:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 11):
-                Refree_Warning()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 10 and cmdID == 0x0105:
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
-                Refree_dart_remaining_time()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 17 and cmdID == 0x301:  # 2bite数据
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 17):
-                # 比赛阶段信息
-                UART_passer.Receive_Robot_Data()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 25 and cmdID == 0x202:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 25):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 25 and cmdID == 0x203:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 25):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 27 and cmdID == 0x201:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 27):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 10 and cmdID == 0x204:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 10 and cmdID == 0x206:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 13 and cmdID == 0x209:  # 雷达没有
-            if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 13):
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
-                continue
-
-        if buffercnt == 16 and cmdID == 0x0301:
+        # 机器人交互信息
+        if bufferCount == 16 and cmdID == 0x0301:
             if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 16):
                 # Refree_map_stop()
-                buffercnt = 0
-                if buffer[buffercnt] == 0xa5:
-                    buffercnt = 1
+                bufferCount = 0
+                if buffer[bufferCount] == 0xa5:
+                    bufferCount = 1
                 continue
 
-        # if buffercnt == 24 and cmdID == 0x0303:
+        # 选手端小地图交互数据，选手端触发发送
+        # if bufferCount == 24 and cmdID == 0x0303:
         #     if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 24):
         #         # 云台手通信
         #         Refree_Arial_Message()
-        #         buffercnt = 0
-        #         if buffer[buffercnt] == 0xa5:
-        #             buffercnt = 1
+        #         bufferCount = 0
+        #         if buffer[bufferCount] == 0xa5:
+        #             bufferCount = 1
         #         continue
 
-        buffercnt += 1
+        # 机器人血量
+        # if bufferCount == 41 and cmdID == 0x0003:
+        #     if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 41):
+        #         # 各车血量
+        #         UART_passer.Referee_Robot_HP()
+        #         bufferCount = 0
+        #         if buffer[bufferCount] == 0xa5:
+        #             bufferCount = 1
+        #         continue
+
+        bufferCount += 1
 
 
 enemy = 0
@@ -315,7 +206,6 @@ class Robomst_UART:
     def Referee_Transmit_Map(self, cmdID, datalength, targetId, x, y, ser):
         """
         小地图包
-
         x，y采用np.float32转换为float32格式
         """
         buffer = [0]
