@@ -36,7 +36,7 @@ def __callback_1(event, x, y, flags, param):
         cv2.circle(param["pick_img"], (x, y), 2, (0, 255, 0), 1)
 
 
-def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_test=False):
+def locate_pick(cap: CameraThread, enemy, camera_type, home_size=False, video_test=False):
     """
     手动四点标定
     :param cap:CameraThread object
@@ -121,8 +121,8 @@ def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_tes
     pick_point = []
     while True:
 
-        cv2.putText(frame,tips[str(enemy)+str(camera_type)][len(pick_point)],(tip_w,tip_h),
-                    cv2.FONT_HERSHEY_SIMPLEX,3,(0,255,0),2)
+        cv2.putText(frame, tips[str(enemy)+str(camera_type)][len(pick_point)], (tip_w, tip_h),
+                    cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 2)
 
         for select_p in pick_point:
             cv2.circle(frame, (int(select_p[0]), int(select_p[1])), 1, (0, 255, 0), 2)
@@ -182,10 +182,10 @@ def locate_pick(cap:CameraThread, enemy, camera_type, home_size=False, video_tes
             return False, None, None
         info["pick_img"] = frame
 
-    pick_point = np.float64(pick_point).reshape(-1,1, 2)
+    pick_point = np.float64(pick_point).reshape(-1, 1, 2)
     flag, rvec, tvec = cv2.solvePnP(ops, pick_point, K_0, C_0, flags=cv2.SOLVEPNP_P3P)
     cv2.destroyWindow(info["pick_win_name"])
-    cv2.destroyWindow(info["zoom_winn_ame"])
+    cv2.destroyWindow(info["zoom_win_name"])
     return flag, rvec, tvec
 
 

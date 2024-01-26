@@ -17,7 +17,7 @@ MAP_PATH = 'save_stuff/map.jpg'
 # NET_PATH = 'weights/detail_best.pt'
 NET_PATH = ''
 model_imgsz = (640, 640)
-map_size = [999, 542]
+map_size = [900, 480]
 
 position_choice = 'y'
 

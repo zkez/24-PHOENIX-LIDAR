@@ -81,6 +81,7 @@ class LocationAlarmer:
                 el2 = None  # 对于特定id，第二个相机基于IoU预测装甲板计算出的位置
                 al1 = None  # 对于特定id，第一个相机预测出的位置（直接神经网络与IoU最多有一个预测，不可能两个同时）
                 al2 = None  # 对于特定id，第二个相机预测出的位置（直接神经网络与IoU最多有一个预测，不可能两个同时）
+
                 if isinstance(rls[0], np.ndarray):
                     mask = rls[0][:, 0] == armor
                     if mask.any():

@@ -158,10 +158,14 @@ if __name__ == "__main__":
     app = Dashboard(img_sz, map_size)
     map = cv2.imread(MAP_PATH)
 
+    # 缩放图像
+    scale_factor = 0.2
+    map_image = cv2.resize(map, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
+
     cap = CameraThread(0)
 
     while 1:
-        cv2.imshow('test', np.zeros((2,2)))
+        cv2.imshow('test', np.zeros((2, 2)))
         key = cv2.waitKey(1)
         if key == ord('r'):
             app.update_text('This is for testing!', is_warning=True)
@@ -171,4 +175,4 @@ if __name__ == "__main__":
             break
         ret, frame = cap.read()
         app.update_cam_pic(frame)
-        app.update_map_mood(map)
+        app.update_map_mood(map_image)
