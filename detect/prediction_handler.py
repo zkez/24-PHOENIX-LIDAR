@@ -10,7 +10,6 @@ def plot(results, frame, only_car=True):
     :param results: list, every item is (predicted_class,conf_score,bounding box(format:x0,y0,x1,y1))
     :param frame: the image to plot on it
     :param only_car:ignore the watcher(guard) and base class
-
     :return: 当输入有仅有颜色预测框时，返回该类预测框的bbox和其他对应id的bbox整合
     """
     color_bbox = []
@@ -77,10 +76,10 @@ class Bbox_Handler:
         pass
 
     def push_T_and_inver(self, rvec, tvec):
-        '''
+        """
         接收旋转向量（rvec）和平移向量（tvec），将它们保存到类的成员变量中，并生成一个4x4的变换矩阵T
         该方法还返回T与原点(0,0,0,1)相乘后的结果的前三个元素，即变换后的原点坐标
-        '''
+        """
         self._rvec = rvec
         self._tvec = tvec
         # 基于位姿做反投影，初始化scene_region预警区域字典
@@ -122,12 +121,12 @@ class Bbox_Handler:
         return map
 
     def xy_check(self, xy, map):
-        '''
+        """
         xy: 需要被画图的点的xy坐标, 其中y采用的是“下原点”模式, 但是opencv画图要用“上原点模式”
         map: 需要被画在的图片上
         这个函数主要就是检测xy是否超过了图片的界限
         如果超过了就想办法让程序不报错
-        '''
+        """
         x, y = xy
         y = self.real_height - y
         width = map.shape[1]
@@ -143,6 +142,8 @@ class Bbox_Handler:
         if new_y > height:
             new_y = height
         return (int(new_x), int(new_y))
+
+
 
 
 
