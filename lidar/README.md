@@ -114,7 +114,7 @@
 2. 相机内参标定   
 > 2.1. 准备20张以上的照片数据，各个角度和位置都要覆盖，拍摄的时候不要距离太近(3米左右)。  
 > 2.2. 获得照片数据后，配置cameraCalib.launch中对应的路径和参数，默认是把照片数据放在data/camera/photos下，然后在data/camera/in.txt中写入所有需要使用的照片名称。  
-> 2.3. roslaunch camera_lidar_calibration cameraCalib.launch  
+> 2.3. roslaunch camera_lidar_calibration cameraCalib.launch(如果报错请退出，命令行xhost+，再次运行docker中的脚本)
 > 2.4. 标定结果中会保存在data/camera/result.txt中，包括重投影误差，内参矩阵和畸变纠正参数。  
 > 2.5. 内参结果：一个3x3的内参矩阵，一个1x5的畸变纠正参数k1, k2, p1, p2, k3。  
 3. 标定准备  
