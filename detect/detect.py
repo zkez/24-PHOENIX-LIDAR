@@ -54,6 +54,30 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         )
 
 
+def xyxy_xyxy(y):
+    """
+    description:    Convert nx4 boxes from [x1, y1, x2, y2] to [x3, y3, x4, y4, x5, y5, x6, y6]
+                    where xy3=top-left, xy4=bottom-left, xy5=bottom-right, xy6=top-right(Counterclockwise)
+    param:
+        origin_h:   height of original image
+        origin_w:   width of original image
+        y:          A boxes numpy, each row is a box [x1, y1, x2, y2]
+    return:
+        z:          A boxes numpy, each row is a box [x3, y3, x4, y4, x5, y5, x6, y6]
+    """
+    z = np.zeros((y.shape[0], 8))
+    z[:, 0] = y[:, 0]
+    z[:, 1] = y[:, 1]
+    z[:, 2] = y[:, 0]
+    z[:, 3] = y[:, 3]
+    z[:, 4] = y[:, 2]
+    z[:, 5] = y[:, 3]
+    z[:, 6] = y[:, 2]
+    z[:, 7] = y[:, 1]
+
+    return z
+
+
 class YoLov8TRT(object):
     def __init__(self, engine_file_path):
         self.ctx = cuda.Device(0).make_context()
@@ -380,7 +404,22 @@ class inferVideoThread(threading.Thread):
                 img_raw, use_time_armor, armor_boxes, armor_scores, armor_classid, armor_location \
                     = self.yolov8_wrapper_armor.infer([img])
 
+                armor_location[:, 0] += box[0]
+                armor_location[:, 1] += box[1]
+                armor_location[:, 2] += box[0]
+                armor_location[:, 3] += box[1]
+                armor_location[:, 4] += box[0]
+                armor_location[:, 5] += box[1]
+                armor_location[:, 6] += box[0]
+                armor_location[:, 7] += box[1]
+
+                armor_location[:, 10] += box[0]
+                armor_location[:, 11] += box[1]
+                armor_location[:, 12] += box[0]
+                armor_location[:, 13] += box[1]
+
                 print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000, 1 / (use_time_car + use_time_armor)))
+                print(car_boxes[j], armor_location)
                 for i in range(len(armor_boxes)):
                     plot_one_box(car_boxes[j], image_raw[0],
                                  label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
