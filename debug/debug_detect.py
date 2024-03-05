@@ -1,13 +1,14 @@
 import ctypes
 import os
 import shutil
+from camera.camera import CameraThread
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path, categories
-from detect.detect import YoLov8TRT, inferVideoThread, warmUpThread
+from detect.detect import YoLov8TRT, inferVideoThread, warmUpThread, inferCameraThread
 
 if __name__ == "__main__":
     ctypes.CDLL(PLUGIN_LIBRARY)
 
-    # categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]
+    categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]
     if os.path.exists('output/'):
         shutil.rmtree('output/')
     os.makedirs('output/')
@@ -25,10 +26,10 @@ if __name__ == "__main__":
 
         video_path = "../detect/images/15.mp4"
 
-        # thread1 = inferCameraThread(yolov8_wrapper_car, yolov8_wrapper_armor)
-        thread1 = inferVideoThread(yolov8_wrapper_car, yolov8_wrapper_armor, video_path)
+        thread1 = inferCameraThread(yolov8_wrapper_car, yolov8_wrapper_armor)
         thread1.start()
         thread1.join()
+        # thread1 = inferVideoThread(yolov8_wrapper_car, yolov8_wrapper_armor, video_path)
 
     finally:
         yolov8_wrapper_car.destroy()

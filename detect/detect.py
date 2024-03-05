@@ -437,23 +437,59 @@ class inferCameraThread(threading.Thread):
 
     def run(self):
         ret, frame = self.cap.read()
-        armor_location = []
 
         while ret:
-            image_raw, use_time, car_boxes, car_scores, car_classid, car_location = self.yolov8_wrapper_car.infer([frame])
-            print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, use_time * 1000, 1 / use_time))
+            image_raw, use_time_car, car_boxes, car_scores, car_classid, car_location \
+                = self.yolov8_wrapper_car.infer([frame])
+
             for j in range(len(car_boxes)):
                 box = car_boxes[j]
                 img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
                 img_raw, use_time_armor, armor_boxes, armor_scores, armor_classid, armor_location \
                     = self.yolov8_wrapper_armor.infer([img])
-                for k in range(len(armor_boxes)):
-                    plot_one_box(car_boxes[j], image_raw[0],
-                                 label="{}:{:.2f}".format(categories[int(armor_classid[k])], car_scores[j]))
 
-            print("armor_location->{}", format(armor_location))
+                armor_location[:, 0] += box[0]
+                armor_location[:, 1] += box[1]
+                armor_location[:, 2] += box[0]
+                armor_location[:, 3] += box[1]
+                armor_location[:, 4] += box[0]
+                armor_location[:, 5] += box[1]
+                armor_location[:, 6] += box[0]
+                armor_location[:, 7] += box[1]
+
+                armor_location[:, 10] += box[0]
+                armor_location[:, 11] += box[1]
+                armor_location[:, 12] += box[0]
+                armor_location[:, 13] += box[1]
+
+                print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000,
+                                                                  1 / (use_time_car + use_time_armor)))
+                for i in range(len(armor_boxes)):
+                    # plot_one_box(box, image_raw[0],
+                    #              label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
+                    cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                                  (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+                    cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
+                                (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 255, 0), 2)
+
             save_folder = '../save_stuff/photos/'
             filename = os.path.join(save_folder, f'save_{time.time()}.jpg')
             cv2.imwrite(filename, image_raw[0])
 
-        self.cap.release()
+
+class ImageDisplayThread(threading.Thread):
+    def __init__(self, image_queue):
+        threading.Thread.__init__(self)
+        self.image_queue = image_queue
+        self.running = True
+
+    def run(self):
+        while self.running:
+            if not self.image_queue.empty():
+                image = self.image_queue.get()
+                cv2.imshow('Thread Display', image)
+                cv2.waitKey(1)  # Add a small delay to allow GUI to update
+
+    def stop(self):
+        self.running = False
