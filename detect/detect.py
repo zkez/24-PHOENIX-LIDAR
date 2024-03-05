@@ -1,8 +1,5 @@
-import ctypes
 import os
-import shutil
 import random
-import sys
 import threading
 import time
 import cv2
@@ -418,12 +415,13 @@ class inferVideoThread(threading.Thread):
                 armor_location[:, 12] += box[0]
                 armor_location[:, 13] += box[1]
 
-                print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000, 1 / (use_time_car + use_time_armor)))
+                print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000,
+                                                                  1 / (use_time_car + use_time_armor)))
                 for i in range(len(armor_boxes)):
                     # plot_one_box(box, image_raw[0],
                     #              label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
-                    cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])), (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
-
+                    cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                                  (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
             out.write(image_raw[0])
 
         cap.release()
@@ -459,47 +457,3 @@ class inferCameraThread(threading.Thread):
             cv2.imwrite(filename, image_raw[0])
 
         self.cap.release()
-
-
-if __name__ == "__main__":
-    # load custom plugin and engine
-    PLUGIN_LIBRARY = "/home/zk/tensorrtx/yolov8/build/libmyplugins.so"
-    car_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8m_car.engine"
-    armor_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8s_armor.engine"
-
-    if len(sys.argv) > 1:
-        engine_file_path = sys.argv[1]
-    if len(sys.argv) > 2:
-        PLUGIN_LIBRARY = sys.argv[2]
-
-    ctypes.CDLL(PLUGIN_LIBRARY)
-
-    categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]
-
-    if os.path.exists('output/'):
-        shutil.rmtree('output/')
-    os.makedirs('output/')
-    # a YoLov8TRT instance
-    yolov8_wrapper_car = YoLov8TRT(car_engine_file_path)
-    yolov8_wrapper_armor = YoLov8TRT(armor_engine_file_path)
-
-    try:
-        print('batch size is', yolov8_wrapper_car.batch_size)
-
-        for i in range(10):
-            # create a new thread to do warm_up
-            thread1 = warmUpThread(yolov8_wrapper_car)
-            thread1.start()
-            thread1.join()
-
-        video_path = "./images/15.mp4"
-
-        # thread1 = inferCameraThread(yolov8_wrapper_car, yolov8_wrapper_armor)
-        thread1 = inferVideoThread(yolov8_wrapper_car, yolov8_wrapper_armor, video_path)
-        thread1.start()
-        thread1.join()
-
-    finally:
-        # destroy the instance
-        yolov8_wrapper_car.destroy()
-        yolov8_wrapper_armor.destroy()

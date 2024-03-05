@@ -10,12 +10,16 @@ LIDAR_TOPIC_NAME = '/livox/lidar'
 LOCATION_SAVE_DIR = 'save_stuff/position'
 
 armor_list = ['R1', 'R2', 'R3', 'R4', 'R5', 'B1', 'B2', 'B3', 'B4', 'B5']  # 雷达站实际考虑的各个装甲板类
+categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]  # 雷达站实际考虑的各个装甲板类(全国赛)
 img_sz = [3088, 2064]
 
 VIDEO_SAVE_DIR = 'save_stuff/video'
 MAP_PATH = 'save_stuff/map.jpg'
 # NET_PATH = 'weights/detail_best.pt'
 NET_PATH = ''
+PLUGIN_LIBRARY = "/home/zk/tensorrtx/yolov8/build/libmyplugins.so"
+car_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8m_car.engine"
+armor_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8s_armor.engine"
 model_imgsz = (640, 640)
 map_size = [900, 480]
 
