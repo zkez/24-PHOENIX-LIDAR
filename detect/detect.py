@@ -419,10 +419,10 @@ class inferVideoThread(threading.Thread):
                 armor_location[:, 13] += box[1]
 
                 print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000, 1 / (use_time_car + use_time_armor)))
-                print(car_boxes[j], armor_location)
                 for i in range(len(armor_boxes)):
-                    plot_one_box(car_boxes[j], image_raw[0],
-                                 label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
+                    # plot_one_box(box, image_raw[0],
+                    #              label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
+                    cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])), (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
 
             out.write(image_raw[0])
 
