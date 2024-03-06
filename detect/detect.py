@@ -4,6 +4,7 @@ import threading
 import time
 import cv2
 import numpy as np
+from queue import Queue
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
@@ -363,7 +364,7 @@ class YoLov8TRT(object):
         return boxes
 
 
-class warmUpThread(threading.Thread):
+class WarmUpThread(threading.Thread):
     def __init__(self, yolov8_wrapper):
         threading.Thread.__init__(self)
         self.yolov8_wrapper = yolov8_wrapper
@@ -373,7 +374,7 @@ class warmUpThread(threading.Thread):
         print('warm_up->{}, time->{:.2f}ms'.format(batch_image_raw[0].shape, use_time * 1000))
 
 
-class inferVideoThread(threading.Thread):
+class InferVideoThread(threading.Thread):
     def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor, video_path):
         threading.Thread.__init__(self)
         self.yolov8_wrapper_car = yolov8_wrapper_car
@@ -428,12 +429,13 @@ class inferVideoThread(threading.Thread):
         out.release()
 
 
-class inferCameraThread(threading.Thread):
-    def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor):
+class InferCameraThread(threading.Thread):
+    def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor, image_queue):
         threading.Thread.__init__(self)
         self.yolov8_wrapper_car = yolov8_wrapper_car
         self.yolov8_wrapper_armor = yolov8_wrapper_armor
         self.cap = CameraThread(0)
+        self.image_queue = image_queue
 
     def run(self):
         ret, frame = self.cap.read()
@@ -473,9 +475,16 @@ class inferCameraThread(threading.Thread):
                                 (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (0, 255, 0), 2)
 
-            save_folder = '../save_stuff/photos/'
-            filename = os.path.join(save_folder, f'save_{time.time()}.jpg')
-            cv2.imwrite(filename, image_raw[0])
+            # save_folder = '../save_stuff/photos/'
+            # filename = os.path.join(save_folder, f'save_{time.time()}.jpg')
+            # cv2.imwrite(filename, image_raw[0])
+
+            self.image_queue.put(image_raw[0])
+            ret, frame = self.cap.read()
+
+    def start_display_thread(self):
+        self.display_thread = ImageDisplayThread(self.image_queue)
+        self.display_thread.start()
 
 
 class ImageDisplayThread(threading.Thread):
@@ -485,11 +494,15 @@ class ImageDisplayThread(threading.Thread):
         self.running = True
 
     def run(self):
+        cv2.namedWindow('Real-Time Display', cv2.WINDOW_NORMAL)
+
         while self.running:
             if not self.image_queue.empty():
                 image = self.image_queue.get()
-                cv2.imshow('Thread Display', image)
-                cv2.waitKey(1)  # Add a small delay to allow GUI to update
+                cv2.imshow('Real-Time Display', image)
+                cv2.waitKey(1)
+
+        cv2.destroyWindow('Real-Time Display')
 
     def stop(self):
         self.running = False
