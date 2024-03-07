@@ -15,11 +15,13 @@ img_sz = [3088, 2064]
 
 VIDEO_SAVE_DIR = 'save_stuff/video'
 MAP_PATH = 'save_stuff/map.jpg'
-# NET_PATH = 'weights/detail_best.pt'
 NET_PATH = ''
 PLUGIN_LIBRARY = "/home/zk/tensorrtx/yolov8/build/libmyplugins.so"
 car_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8m_car.engine"
 armor_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8s_armor.engine"
+CONF_THRESH_CAR = 0.5
+CONF_THRESH_ARMOR = 0.01
+IOU_THRESHOLD = 0.4
 model_imgsz = (640, 640)
 map_size = [900, 480]
 

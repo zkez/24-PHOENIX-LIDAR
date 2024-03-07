@@ -1,9 +1,9 @@
 import ctypes
 import os
 import shutil
-from queue import Queue
-from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path, categories
-from detect.detect import YoLov8TRT, ImageDisplayThread, WarmUpThread, InferCameraThread
+import cv2
+from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
+from detect.detect import YoLov8TRT, armor_post_process
 
 if __name__ == "__main__":
     ctypes.CDLL(PLUGIN_LIBRARY)
@@ -12,27 +12,33 @@ if __name__ == "__main__":
     if os.path.exists('output/'):
         shutil.rmtree('output/')
     os.makedirs('output/')
-    # a YoLov8TRT instance
-    yolov8_wrapper_car = YoLov8TRT(car_engine_file_path)
-    yolov8_wrapper_armor = YoLov8TRT(armor_engine_file_path)
+
+    YOLOv8_car = YoLov8TRT(car_engine_file_path)
+    YOLOv8_armor = YoLov8TRT(armor_engine_file_path)
 
     try:
-        print('batch size is', yolov8_wrapper_car.batch_size)
-
-        for i in range(10):
-            thread1 = WarmUpThread(yolov8_wrapper_car)
-            thread1.start()
-            thread1.join()
-
-        image_queue = Queue()
-        thread2 = ImageDisplayThread(image_queue)
-        thread2.start()
         video_path = "../detect/images/15.mp4"
-        # thread1 = InferVideoThread(yolov8_wrapper_car, yolov8_wrapper_armor, video_path)
-        thread1 = InferCameraThread(yolov8_wrapper_car, yolov8_wrapper_armor, image_queue)
-        thread1.start()
-        thread1.join()
+        cap = cv2.VideoCapture(video_path)
+        frame_width = int(cap.get(3))
+        frame_height = int(cap.get(4))
+
+        armor_location_list = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            car_image, use_time_car, car_boxes, car_scores, car_classID, car_location \
+                = YOLOv8_car.infer([frame])
+            for i in range(len(car_boxes)):
+                box = car_boxes[i]
+                img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                armor_image, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
+                    = YOLOv8_armor.infer([img])
+
+                armor_post_process(armor_location, box)
+
+                armor_location_list.append(armor_location)
 
     finally:
-        yolov8_wrapper_car.destroy()
-        yolov8_wrapper_armor.destroy()
+        YOLOv8_car.destroy()
+        YOLOv8_armor.destroy()

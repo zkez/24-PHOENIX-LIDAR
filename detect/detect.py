@@ -1,19 +1,13 @@
-import os
 import random
 import threading
 import time
 import cv2
 import numpy as np
-from queue import Queue
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 from camera.camera import CameraThread
-
-CONF_THRESH_CAR = 0.5
-CONF_THRESH_ARMOR = 0.01
-IOU_THRESHOLD = 0.4
-categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]
+from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories
 
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
@@ -31,15 +25,15 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
     """
     tl = (
             line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1
-    )  # line/font thickness
+    )
     color = color or [random.randint(0, 255) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
-        tf = max(tl - 1, 1)  # font thickness
+        tf = max(tl - 1, 1)
         t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
         c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)
         cv2.putText(
             img,
             label,
@@ -74,6 +68,22 @@ def xyxy_xyxy(y):
     z[:, 7] = y[:, 1]
 
     return z
+
+
+def armor_post_process(armor_location, car_box):
+    armor_location[:, 0] += car_box[0]
+    armor_location[:, 1] += car_box[1]
+    armor_location[:, 2] += car_box[0]
+    armor_location[:, 3] += car_box[1]
+    armor_location[:, 4] += car_box[0]
+    armor_location[:, 5] += car_box[1]
+    armor_location[:, 6] += car_box[0]
+    armor_location[:, 7] += car_box[1]
+
+    armor_location[:, 10] += car_box[0]
+    armor_location[:, 11] += car_box[1]
+    armor_location[:, 12] += car_box[0]
+    armor_location[:, 13] += car_box[1]
 
 
 class YoLov8TRT(object):
@@ -155,13 +165,13 @@ class YoLov8TRT(object):
         output = host_outputs[0]
         result_boxes = []
         result_scores = []
-        result_classid = []
+        result_classID = []
         for i in range(self.batch_size):
-            result_boxes, result_scores, result_classid, det = self.post_process(
+            result_boxes, result_scores, result_classID, det = self.post_process(
                 output[i * 38001: (i + 1) * 38001], batch_origin_h[i], batch_origin_w[i]
             )
 
-        return batch_image_raw, end - start, result_boxes, result_scores, result_classid, det
+        return batch_image_raw, end - start, result_boxes, result_scores, result_classID, det
 
     def destroy(self):
         self.ctx.pop()
@@ -276,23 +286,23 @@ class YoLov8TRT(object):
         return:
             result_boxes: finally boxes, a boxes numpy, each row is a box [x1, y1, x2, y2]
             result_scores: finally scores, a numpy, each element is the score correspoing to box
-            result_classid: finally classid, a numpy, each element is the classid correspoing to box
+            result_classID: finally classID, a numpy, each element is the classID correspoing to box
         """
         num = int(output[0])
         pred = np.reshape(output[1:], (-1, 38))[:num, :]
-        boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thres=CONF_THRESH_CAR, nms_thres=IOU_THRESHOLD)
+        boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thresh=CONF_THRESH_CAR, nms_thresh=IOU_THRESHOLD)
         result_boxes = boxes[:, :4] if len(boxes) else np.array([])
         result_scores = boxes[:, 4] if len(boxes) else np.array([])
-        result_classid = boxes[:, 5] if len(boxes) else np.array([])
+        result_classID = boxes[:, 5] if len(boxes) else np.array([])
         result_4xyxy = self.xyxy4xyxy(result_boxes) if len(result_boxes) else np.array([])
 
         r_boxes = np.array(result_boxes).reshape(-1, 4)
         r_scores = np.array(result_scores).reshape(-1, 1)
-        r_classid = np.array(result_classid).reshape(-1, 1)
+        r_classID = np.array(result_classID).reshape(-1, 1)
         r_4xyxy = np.array(result_4xyxy).reshape(-1, 8)
 
-        det = np.concatenate((r_4xyxy, r_scores, r_classid, r_boxes), axis=1)
-        return result_boxes, result_scores, result_classid, det
+        det = np.concatenate((r_4xyxy, r_scores, r_classID, r_boxes), axis=1)
+        return result_boxes, result_scores, result_classID, det
 
     def bbox_iou(self, box1, box2, x1y1x2y2=True):
         """
@@ -328,20 +338,20 @@ class YoLov8TRT(object):
 
         return iou
 
-    def non_max_suppression(self, prediction, origin_h, origin_w, conf_thres=0.5, nms_thres=0.4):
+    def non_max_suppression(self, prediction, origin_h, origin_w, conf_thresh=0.5, nms_thresh=0.4):
         """
-        description: Removes detections with lower object confidence score than 'conf_thres' and performs
+        description: Removes detections with lower object confidence score than 'conf_thresh' and performs
         Non-Maximum Suppression to further filter detections.
         param:
             prediction: detections, (x1, y1, x2, y2, conf, cls_id)
             origin_h: original image height
             origin_w: original image width
-            conf_thres: a confidence threshold to filter detections
-            nms_thres: a iou threshold to filter detections
+            conf_thresh: a confidence threshold to filter detections
+            nms_thresh: an iou threshold to filter detections
         return:
             boxes: output after nms with the shape (x1, y1, x2, y2, conf, cls_id)
         """
-        boxes = prediction[prediction[:, 4] >= conf_thres]
+        boxes = prediction[prediction[:, 4] >= conf_thresh]
         boxes[:, :4] = self.xywh2xyxy(origin_h, origin_w, boxes[:, :4])
 
         boxes[:, 0] = np.clip(boxes[:, 0], 0, origin_w - 1)
@@ -355,7 +365,7 @@ class YoLov8TRT(object):
 
         keep_boxes = []
         while boxes.shape[0]:
-            large_overlap = self.bbox_iou(np.expand_dims(boxes[0, :4], 0), boxes[:, :4]) > nms_thres
+            large_overlap = self.bbox_iou(np.expand_dims(boxes[0, :4], 0), boxes[:, :4]) > nms_thresh
             label_match = boxes[0, -1] == boxes[:, -1]
             invalid = large_overlap & label_match
             keep_boxes += [boxes[0]]
@@ -430,16 +440,16 @@ class InferVideoThread(threading.Thread):
 
 
 class InferCameraThread(threading.Thread):
-    def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor, image_queue):
+    def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor, output_queue, lock):
         threading.Thread.__init__(self)
         self.yolov8_wrapper_car = yolov8_wrapper_car
         self.yolov8_wrapper_armor = yolov8_wrapper_armor
         self.cap = CameraThread(0)
-        self.image_queue = image_queue
+        self.output_queue = output_queue
+        self.lock = lock
 
     def run(self):
         ret, frame = self.cap.read()
-
         while ret:
             image_raw, use_time_car, car_boxes, car_scores, car_classid, car_location \
                 = self.yolov8_wrapper_car.infer([frame])
@@ -466,6 +476,8 @@ class InferCameraThread(threading.Thread):
 
                 print('input->{}, time->{:.2f}ms, fps->{}'.format(frame.shape, (use_time_car + use_time_armor) * 1000,
                                                                   1 / (use_time_car + use_time_armor)))
+                with self.lock:
+                    self.output_queue.put(armor_location.copy())
                 for i in range(len(armor_boxes)):
                     # plot_one_box(box, image_raw[0],
                     #              label="{}:{:.2f}".format(categories[int(armor_classid[i])], car_scores[j]))
@@ -474,17 +486,6 @@ class InferCameraThread(threading.Thread):
                     cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                                 (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (0, 255, 0), 2)
-
-            # save_folder = '../save_stuff/photos/'
-            # filename = os.path.join(save_folder, f'save_{time.time()}.jpg')
-            # cv2.imwrite(filename, image_raw[0])
-
-            self.image_queue.put(image_raw[0])
-            ret, frame = self.cap.read()
-
-    def start_display_thread(self):
-        self.display_thread = ImageDisplayThread(self.image_queue)
-        self.display_thread.start()
 
 
 class ImageDisplayThread(threading.Thread):
