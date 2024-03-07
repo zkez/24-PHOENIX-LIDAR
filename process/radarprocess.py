@@ -9,12 +9,13 @@ from detect.predictor import Predictor
 import time
 import cv2
 from macro import MAP_PATH, enemy, home_test, map_size, img_sz, NET_PATH, model_imgsz\
-    , VIDEO_SAVE_DIR, debug
+    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path
 from Calibration.location import locate_record, locate_pick
 from detect.common import armor_filter
 from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import Static_UART
+from detect.detect import YoLov8TRT, armor_post_process
 
 
 class radar_process:
@@ -42,6 +43,8 @@ class radar_process:
 
         self.net = Predictor(NET_PATH, model_imgsz)
         # weights/detail_best.pt
+        self.car_net = YoLov8TRT(car_engine_file_path)
+        self.armor_net = YoLov8TRT(armor_engine_file_path)
 
         self.position_flag = False
         self._position_flag = np.array([self.position_flag])
@@ -141,9 +144,23 @@ class radar_process:
             time.sleep(0.05)
             return
 
+        # 单网络推理
         ret, locations, show_im = self.net.cated_infer(frame)
+        # 双网络推理
+        car_image, use_time_car, car_boxes, car_scores, car_classID, car_location \
+            = self.car_net.infer([frame])
+        armor_location = []
+        for i in range(len(car_boxes)):
+            box = car_boxes[i]
+            img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+            armor_image, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
+                = self.armor_net.infer([img])
+            armor_post_process(armor_location, box)
+
         locations = armor_filter(locations)
         self.panel.update_cam_pic(show_im)
+
+        # locations = armor_filter(np.float32(armor_location))
 
         pred_loc = None
 
