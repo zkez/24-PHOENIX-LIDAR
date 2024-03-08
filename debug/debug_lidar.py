@@ -3,7 +3,7 @@ import traceback
 import numpy as np
 
 from camera.camera import CameraThread
-from camera.common import read_yaml
+from camera.camera_common import read_yaml
 from Calibration.location import locate_pick
 from lidar.Lidar import Radar
 
