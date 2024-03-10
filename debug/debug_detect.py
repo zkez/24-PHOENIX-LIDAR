@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     try:
         while True:
+            t1 = time.time()
             ret, frame = cap.read()
             if ret:
                 car_image, use_time_car, car_boxes, car_scores, car_classID, car_location \
@@ -44,11 +45,9 @@ if __name__ == "__main__":
                         cv2.putText(frame, categories[int(armor_location[j][9])], (int(armor_location[j][10]),
                                                                               int(armor_location[j][11])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv2.imwrite('output/{}.jpg'.format(time.time()), frame)
-
-                    print('time->{:.2f}ms, fps->{}'.format((use_time_car + use_time_armor) * 1000,
-                                                                      1 / (use_time_car + use_time_armor)))
             else:
                 break
+            print('time->{:.2f}ms, fps->{:.2f}'.format((time.time() - t1) * 1000, 1 / (time.time() - t1)))
 
     finally:
         YOLOv8_car.destroy()
