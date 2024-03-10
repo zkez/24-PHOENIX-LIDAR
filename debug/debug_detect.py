@@ -2,8 +2,9 @@ import ctypes
 import os
 import shutil
 import time
-
 import cv2
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
 from detect.detect import YoLov8TRT
 from detect.detect_common import armor_post_process
