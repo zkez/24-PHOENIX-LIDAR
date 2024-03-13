@@ -2,21 +2,21 @@ import time
 import serial
 import traceback
 import threading
-from process.radarprocess import radar_process
+from process.radarprocess import RadarProcess
 from macro import position_choice
 from referee_system.static_uart import Static_UART
 
 
 if __name__ == '__main__':
     try:
-        ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=0.01)
-        main_process = radar_process()
+        # ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=0.01)
+        main_process = RadarProcess()
         choice = position_choice if isinstance(position_choice, str) else input(
             'Get new position? Y/y for yes, N/n for no\n')
-        uart_thread = threading.Thread(target=Static_UART.advanced_loop, args=(ser, ), name='uart')
-        alarm_thread = threading.Thread(target=Static_UART.alarm_loop, args=(ser, ), name='alarm')
-        uart_thread.start()
-        alarm_thread.start()
+        # uart_thread = threading.Thread(target=Static_UART.advanced_loop, args=(ser, ), name='uart')
+        # alarm_thread = threading.Thread(target=Static_UART.alarm_loop, args=(ser, ), name='alarm')
+        # uart_thread.start()
+        # alarm_thread.start()
 
         if choice in ['Y', 'y']:
             main_process.panel.set_cam()
