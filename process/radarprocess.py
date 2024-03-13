@@ -1,4 +1,5 @@
 import glob
+import ctypes
 import numpy as np
 from camera.camera import CameraThread
 from camera.camera_common import read_yaml
@@ -8,15 +9,14 @@ from Calibration.location_alarmer import LocationAlarmer
 # from detect.predictor import Predictor
 import time
 import cv2
-from macro import MAP_PATH, enemy, home_test, map_size, img_sz, NET_PATH, model_imgsz\
-    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, categories
+from macro import MAP_PATH, enemy, home_test, map_size, img_sz, model_imgsz\
+    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, categories, armor_locations, PLUGIN_LIBRARY
 from Calibration.location import locate_record, locate_pick
 from detect.common import armor_filter
 from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import Static_UART
-from detect.detect import YoLov8TRT
-from detect.detect_common import armor_post_process
+from detect.detect import YoLov8TRT, InferCameraThread
 
 
 class RadarProcess:
@@ -44,8 +44,8 @@ class RadarProcess:
 
         # self.net = Predictor(NET_PATH, model_imgsz)
         # weights/detail_best.pt
-        # self.car_net = YoLov8TRT(car_engine_file_path)
-        # self.armor_net = YoLov8TRT(armor_engine_file_path)
+        self.car_net = YoLov8TRT(car_engine_file_path)
+        self.armor_net = YoLov8TRT(armor_engine_file_path)
 
         self.position_flag = False
         self._position_flag = np.array([self.position_flag])
@@ -149,34 +149,19 @@ class RadarProcess:
         # ret, locations, show_im = self.net.cated_infer(frame)
 
         # 双网络推理
-        YOLOv8_car = YoLov8TRT(car_engine_file_path)
-        YOLOv8_armor = YoLov8TRT(armor_engine_file_path)
-        car_image, use_time_car, car_boxes, car_scores, car_classID, car_location \
-            = YOLOv8_car.infer([frame])
-        armor_location = []
-        for i in range(len(car_boxes)):
-            box = car_boxes[i]
-            img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
-            armor_image, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
-                = YOLOv8_armor.infer([img])
-            armor_post_process(armor_location, box)
-            for j in range(len(armor_boxes)):
-                cv2.rectangle(frame, (int(armor_location[j][10]), int(armor_location[j][11])),
-                              (int(armor_location[j][12]), int(armor_location[j][13])), (0, 255, 0), 2)
-                cv2.putText(frame, categories[int(armor_location[j][9])], (int(armor_location[j][10]),
-                                                                           int(armor_location[j][11])),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        ctypes.CDLL(PLUGIN_LIBRARY)
+        InferCameraThread(self.car_net, self.armor_net, frame)
 
         # locations = armor_filter(locations)
         # self.panel.update_cam_pic(show_im)
 
-        locations = armor_filter(np.float32(armor_location))
+        locations = armor_filter(np.float32(armor_locations))
         self.panel.update_cam_pic(frame)
 
         pred_loc = None
 
         # if ret:
-        if range(len(car_boxes)):
+        if len(locations):
 
             pred_loc = self.location_alarmor.refine_cood(locations, self.radar)
 

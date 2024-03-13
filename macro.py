@@ -29,7 +29,7 @@ position_choice = 'y'
 
 color2enemy = {"red": 0, "blue": 1}
 enemy2color = ['red', 'blue']
-locations = []
+armor_locations = []
 
 location_targets = {
     # enemy:red

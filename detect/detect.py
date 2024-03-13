@@ -5,7 +5,7 @@ import numpy as np
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
-from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, locations
+from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, armor_locations
 from detect.detect_common import armor_post_process
 
 
@@ -367,9 +367,9 @@ class InferCameraThread(threading.Thread):
                 = self.yolov8_wrapper_armor.infer([img])
 
             armor_post_process(armor_location, box)
-            locations.append(armor_location)
-
-            for i in range(len(armor_boxes)):
+            armor_locations.append(armor_location)
+0
+0            for i in range(len(armor_boxes)):
                 cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
                                 (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
                 cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
