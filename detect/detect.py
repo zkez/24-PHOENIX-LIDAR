@@ -368,8 +368,8 @@ class InferCameraThread(threading.Thread):
 
             armor_post_process(armor_location, box)
             armor_locations.append(armor_location)
-0
-0            for i in range(len(armor_boxes)):
+
+            for i in range(len(armor_boxes)):
                 cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
                                 (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
                 cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
