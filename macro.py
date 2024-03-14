@@ -15,7 +15,6 @@ img_sz = [3088, 2064]
 
 VIDEO_SAVE_DIR = 'save_stuff/video'
 MAP_PATH = 'save_stuff/map.jpg'
-NET_PATH = ''
 PLUGIN_LIBRARY = "/home/zk/tensorrtx/yolov8/build/libmyplugins.so"
 car_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8m_car.engine"
 armor_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8s_armor.engine"
@@ -29,7 +28,6 @@ position_choice = 'y'
 
 color2enemy = {"red": 0, "blue": 1}
 enemy2color = ['red', 'blue']
-armor_locations = []
 
 location_targets = {
     # enemy:red

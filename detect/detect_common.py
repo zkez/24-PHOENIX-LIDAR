@@ -1,6 +1,7 @@
 import cv2
 import random
 import numpy as np
+from macro import categories
 
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
@@ -72,8 +73,58 @@ def armor_post_process(armor_location, car_box):
     armor_location[:, 5] += car_box[1]
     armor_location[:, 6] += car_box[0]
     armor_location[:, 7] += car_box[1]
-
+    # armor_location[:, 8] = scores
+    # armor_location[:, 9] = classID
     armor_location[:, 10] += car_box[0]
     armor_location[:, 11] += car_box[1]
     armor_location[:, 12] += car_box[0]
     armor_location[:, 13] += car_box[1]
+
+
+def car_armor_infer(carNet, armorNet, frame):
+    locations = []
+    image_raw, use_time_car, car_boxes, car_scores, car_classID, car_location \
+        = carNet.infer([frame])
+
+    for j in range(len(car_boxes)):
+        box = car_boxes[j]
+        img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+        img_raw, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
+            = armorNet.infer([img])
+
+        armor_post_process(armor_location, box)
+        locations.append(armor_location)
+
+        for i in range(len(armor_boxes)):
+            cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                          (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+            cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
+                        (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 255, 0), 2)
+
+    return locations, image_raw[0]
+
+
+def armor_filter(armors):
+    """
+    装甲板去重
+    :param armors:input np.ndarray (N,fp+conf+cls+img_no+bbox)
+    :return: armors np.ndarray 每个id都最多有一个装甲板
+    """
+    # 直接取最高置信度
+    ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 0-5分别为b1-5 b7, 6-11分别为r1-5 r7
+    if isinstance(armors, np.ndarray):
+        results = []
+        for i in ids:
+            mask = armors[:, 9] == i
+            armors_mask = armors[mask]
+            if armors_mask.shape[0]:
+                armor = armors_mask[np.argmax(armors_mask[:, 8])]
+                results.append(armor)
+        if len(results):
+            armors = np.stack(results, axis=0)
+            return armors
+        else:
+            return None
+    else:
+        return None

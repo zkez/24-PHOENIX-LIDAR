@@ -375,3 +375,17 @@ class InferCameraThread(threading.Thread):
                 cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                             (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 255, 0), 2)
+
+    def crop_image(self, frame):
+        frame_height, frame_width = frame.shape[0], frame.shape[1]
+
+        first_frame = frame[0:frame_height // 2, 0:frame_width // 2]
+        second_frame = frame[0:frame_height // 2, frame_width // 2:frame_width]
+        third_frame = frame[frame_height // 2:frame_height, 0:frame_width // 2]
+        forth_frame = frame[frame_height // 2:frame_height, frame_width // 2:frame_width]
+
+        group_image = [first_frame, second_frame, third_frame, forth_frame]
+
+        return group_image
+
+    # def crop_infer(self, group_image):

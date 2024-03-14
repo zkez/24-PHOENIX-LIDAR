@@ -1,22 +1,21 @@
+import cv2
 import glob
-import ctypes
+import time
 import numpy as np
+
 from camera.camera import CameraThread
 from camera.camera_common import read_yaml
 from lidar.Lidar import Radar
 from detect.prediction_handler import Bbox_Handler
 from Calibration.location_alarmer import LocationAlarmer
-# from detect.predictor import Predictor
-import time
-import cv2
-from macro import MAP_PATH, enemy, home_test, map_size, img_sz, model_imgsz\
-    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, categories, armor_locations, PLUGIN_LIBRARY
+from macro import MAP_PATH, enemy, home_test, map_size, img_sz\
+    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path
 from Calibration.location import locate_record, locate_pick
-from detect.common import armor_filter
 from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import Static_UART
-from detect.detect import YoLov8TRT, InferCameraThread
+from detect.detect import YoLov8TRT
+from detect.detect_common import car_armor_infer, armor_filter
 
 
 class RadarProcess:
@@ -43,7 +42,6 @@ class RadarProcess:
         self.location_alarmor = LocationAlarmer(False, True)
 
         # self.net = Predictor(NET_PATH, model_imgsz)
-        # weights/detail_best.pt
         self.car_net = YoLov8TRT(car_engine_file_path)
         self.armor_net = YoLov8TRT(armor_engine_file_path)
 
@@ -149,14 +147,13 @@ class RadarProcess:
         # ret, locations, show_im = self.net.cated_infer(frame)
 
         # 双网络推理
-        ctypes.CDLL(PLUGIN_LIBRARY)
-        InferCameraThread(self.car_net, self.armor_net, frame)
+        armor_locations, img = car_armor_infer(self.car_net, self.armor_net, frame)
 
         # locations = armor_filter(locations)
         # self.panel.update_cam_pic(show_im)
 
-        locations = armor_filter(np.float32(armor_locations))
-        self.panel.update_cam_pic(frame)
+        locations = armor_filter(armor_locations)
+        self.panel.update_cam_pic(img)
 
         pred_loc = None
 
