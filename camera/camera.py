@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from datetime import datetime
-
 from camera import mvsdk
 from macro import CACHE_CONFIG_SAVE_DIR, preview_location
 
@@ -284,6 +283,3 @@ def tune_exposure(cap: HTCamera, date, high_reso=False):
     print(f"finish set exposure time {ex:.03f}ms")
     print(f"finish set analog gain {g1}")
     cv2.destroyWindow("exposure press q to exit")
-
-
-

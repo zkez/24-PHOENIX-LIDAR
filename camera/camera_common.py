@@ -1,6 +1,5 @@
 import yaml
 import numpy as np
-from macro import CAMERA_CONFIG_DIR
 
 
 def read_yaml(camera_type):

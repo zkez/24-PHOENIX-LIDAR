@@ -170,7 +170,6 @@ class Radar(object):
             pc = pc[dist > 0.4]  # 雷达近距离滤除
             # do record
             if Radar.__record_times > 0:
-
                 Radar.__record_list.append(pc)
                 print("[INFO] recording point cloud {0}/{1}".format(Radar.__record_max_times - Radar.__record_times, Radar.__record_max_times))
                 if Radar.__record_times == 1:
@@ -263,4 +262,3 @@ def _async_raise(tid, exctype):
 
 def stop_thread(thread):
     _async_raise(thread.ident, SystemExit)
-
