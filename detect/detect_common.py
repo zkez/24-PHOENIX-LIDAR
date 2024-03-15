@@ -94,6 +94,7 @@ def car_armor_infer(carNet, armorNet, frame):
 
         armor_post_process(armor_location, box)
         locations.append(armor_location)
+        array_locations = np.concatenate(locations, axis=0)
 
         for i in range(len(armor_boxes)):
             cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
@@ -102,7 +103,7 @@ def car_armor_infer(carNet, armorNet, frame):
                         (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (0, 255, 0), 2)
 
-    return locations, image_raw[0]
+    return array_locations.reshape(-1, 14), image_raw[0]
 
 
 def armor_filter(armors):
@@ -128,3 +129,4 @@ def armor_filter(armors):
             return None
     else:
         return None
+

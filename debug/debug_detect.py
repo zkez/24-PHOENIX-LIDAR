@@ -6,7 +6,8 @@ import cv2
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
-from detect.detect import YoLov8TRT, InferCameraThread, locations
+from detect.detect import YoLov8TRT
+from detect.detect_common import car_armor_infer
 from camera.camera import CameraThread
 
 if __name__ == "__main__":
@@ -29,12 +30,12 @@ if __name__ == "__main__":
             t1 = time.time()
             ret, frame = cap.read()
             if ret:
-                InferCameraThread(YOLOv8_car, YOLOv8_armor, frame)
+                locations, img = car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
                 print(locations)
             else:
                 break
             cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
-            cv2.imshow('frame', frame)
+            cv2.imshow('frame', img)
             cv2.waitKey(1)
             print('fps->{:.2f}'.format(1 / (time.time() - t1)))
 

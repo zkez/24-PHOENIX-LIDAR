@@ -150,6 +150,9 @@ class App(tk.Tk):
         self.photo = ImageTk.PhotoImage(self.img)
         self.image_label.config(image=self.photo)
 
+        width, height = self.img.size
+        self.geometry(f"{width + 50}x{height + 50}")
+
 
 if __name__ == "__main__":
     from camera.camera import CameraThread

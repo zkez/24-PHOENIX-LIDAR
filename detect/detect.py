@@ -356,13 +356,12 @@ class InferCameraThread(threading.Thread):
         self.frame = frame
 
     def run(self):
-        frame = self.frame.copy()
         image_raw, use_time_car, car_boxes, car_scores, car_classid, car_location \
-            = self.yolov8_wrapper_car.infer([frame])
+            = self.yolov8_wrapper_car.infer([self.frame])
 
         for j in range(len(car_boxes)):
             box = car_boxes[j]
-            img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+            img = self.frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
             img_raw, use_time_armor, armor_boxes, armor_scores, armor_classid, armor_location \
                 = self.yolov8_wrapper_armor.infer([img])
 
@@ -370,9 +369,9 @@ class InferCameraThread(threading.Thread):
             armor_locations.append(armor_location)
 
             for i in range(len(armor_boxes)):
-                cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                cv2.rectangle(self.frame, (int(armor_location[i][10]), int(armor_location[i][11])),
                                 (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
-                cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
+                cv2.putText(self.frame, "{}".format(categories[int(armor_location[i][9])]),
                             (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 255, 0), 2)
 

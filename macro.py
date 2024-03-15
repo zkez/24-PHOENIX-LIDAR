@@ -12,6 +12,7 @@ LOCATION_SAVE_DIR = 'save_stuff/position'
 armor_list = ['R1', 'R2', 'R3', 'R4', 'R5', 'B1', 'B2', 'B3', 'B4', 'B5']  # 雷达站实际考虑的各个装甲板类
 categories = ["B1", "B2", "B3", "B4", "B5", "B7", "R1", "R2", "R3", "R4", "R5", "R7"]  # 雷达站实际考虑的各个装甲板类(全国赛)
 img_sz = [3088, 2064]
+armor_locations = []
 
 VIDEO_SAVE_DIR = 'save_stuff/video'
 MAP_PATH = 'save_stuff/map.jpg'
