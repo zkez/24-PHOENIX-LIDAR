@@ -10,17 +10,13 @@ from lidar.Lidar import Radar
 
 if __name__ == '__main__':
     # 测试demo 同时也是非常好的测距测试脚本
-
     _, K_0, C_0, E_0, imgsz = read_yaml(0)
 
     ra = Radar(K_0, C_0, E_0, imgsz=imgsz)
     Radar.start()
 
-    cv2.namedWindow("out", cv2.WINDOW_NORMAL)  # 显示雷达深度图
-    cv2.resizeWindow("out", 1280, 960)
-    cv2.namedWindow("img", cv2.WINDOW_NORMAL)  # 显示实际图片
-    cv2.resizeWindow("img", 1280, 960)
-
+    cv2.namedWindow("out",cv2.WINDOW_NORMAL)  # 显示雷达深度图
+    cv2.namedWindow("img",cv2.WINDOW_NORMAL)  # 显示实际图片
     cap = CameraThread(0)
     try:
         flag, frame = cap.read()
@@ -39,7 +35,7 @@ if __name__ == '__main__':
 
         key = cv2.waitKey(1)
 
-        while(flag and key != ord('q') & 0xFF):
+        while (flag and key != ord('q') & 0xFF):
 
             depth = ra.read()  # 获得深度图
 

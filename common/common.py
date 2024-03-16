@@ -2,7 +2,7 @@ import cv2
 import random
 import numpy as np
 import yaml
-from macro import categories
+from macro import categories, CAMERA_CONFIG_DIR
 
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
@@ -142,8 +142,7 @@ def read_yaml(camera_type):
     :param camera_type: 相机编号
     :return: 读取成功失败标志位，相机内参，畸变系数，和雷达外参，相机图像大小
     """
-    # yaml_path = "{0}/camera{1}.yaml".format(CAMERA_CONFIG_DIR, camera_type)
-    yaml_path = '/home/zk/zk/Camera_config/camera{0}.yaml'.format(camera_type)
+    yaml_path = "../{0}/camera{1}.yaml".format(CAMERA_CONFIG_DIR, camera_type)
     try:
         with open(yaml_path, 'rb') as f:
             res = yaml.load(f, Loader=yaml.FullLoader)
