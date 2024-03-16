@@ -85,13 +85,13 @@ def armor_post_process(armor_location, car_box):
 def car_armor_infer(carNet, armorNet, frame):
     locations = []
     image_raw, use_time_car, car_boxes, car_scores, car_classID, car_location \
-        = carNet.infer([frame])
+        = carNet.infer([frame], flag='car')
 
     for j in range(len(car_boxes)):
         box = car_boxes[j]
         img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
         img_raw, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
-            = armorNet.infer([img])
+            = armorNet.infer([img], flag='armor')
 
         armor_post_process(armor_location, box)
         locations.append(armor_location)
@@ -104,7 +104,8 @@ def car_armor_infer(carNet, armorNet, frame):
                         (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (0, 255, 0), 2)
 
-    if armor_location != None:
+    if len(locations) > 0:
+        locations.pop()
         return True, array_locations.reshape(-1, 14), image_raw[0]
     else:
         return False, None, frame

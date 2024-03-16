@@ -21,8 +21,8 @@ if __name__ == "__main__":
     YOLOv8_car = YoLov8TRT(car_engine_file_path)
     YOLOv8_armor = YoLov8TRT(armor_engine_file_path)
     for i in range(10):
-        car_batch_image_raw, use_time_car, *a_car = YOLOv8_car.infer(YOLOv8_car.get_raw_image_zeros())
-        armor_batch_image_raw, use_time_armor, *a_armor = YOLOv8_armor.infer(YOLOv8_armor.get_raw_image_zeros())
+        car_batch_image_raw, use_time_car, *a_car = YOLOv8_car.infer(YOLOv8_car.get_raw_image_zeros(), flag='car')
+        armor_batch_image_raw, use_time_armor, *a_armor = YOLOv8_armor.infer(YOLOv8_armor.get_raw_image_zeros(), flag='armor')
 
     cap = CameraThread(0)
     try:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             t1 = time.time()
             ret, frame = cap.read()
             if ret:
-                locations, img = car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
+                r, locations, img = car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
                 print(locations)
             else:
                 break

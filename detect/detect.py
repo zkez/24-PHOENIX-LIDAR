@@ -5,7 +5,7 @@ import numpy as np
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
-from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, armor_locations
+from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, armor_locations, CONF_THRESH_ARMOR
 from common.common import armor_post_process
 
 
@@ -51,7 +51,7 @@ class YoLov8TRT(object):
         self.bindings = bindings
         self.batch_size = engine.max_batch_size
 
-    def infer(self, raw_image_generator):
+    def infer(self, raw_image_generator, flag):
         threading.Thread.__init__(self)
         self.ctx.push()
         stream = self.stream
@@ -91,7 +91,7 @@ class YoLov8TRT(object):
         result_classID = []
         for i in range(self.batch_size):
             result_boxes, result_scores, result_classID, det = self.post_process(
-                output[i * 38001: (i + 1) * 38001], batch_origin_h[i], batch_origin_w[i]
+                output[i * 38001: (i + 1) * 38001], batch_origin_h[i], batch_origin_w[i], flag
             )
 
         return batch_image_raw, end - start, result_boxes, result_scores, result_classID, det
@@ -199,7 +199,7 @@ class YoLov8TRT(object):
 
         return z
 
-    def post_process(self, output, origin_h, origin_w):
+    def post_process(self, output, origin_h, origin_w, flag):
         """
         description: postprocess the prediction
         param:
@@ -213,7 +213,10 @@ class YoLov8TRT(object):
         """
         num = int(output[0])
         pred = np.reshape(output[1:], (-1, 38))[:num, :]
-        boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thresh=CONF_THRESH_CAR, nms_thresh=IOU_THRESHOLD)
+        if flag == 'car':
+            boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thresh=CONF_THRESH_CAR, nms_thresh=IOU_THRESHOLD)
+        elif flag == 'armor':
+            boxes = self.non_max_suppression(pred, origin_h, origin_w, conf_thresh=CONF_THRESH_ARMOR, nms_thresh=IOU_THRESHOLD)
         result_boxes = boxes[:, :4] if len(boxes) else np.array([])
         result_scores = boxes[:, 4] if len(boxes) else np.array([])
         result_classID = boxes[:, 5] if len(boxes) else np.array([])
