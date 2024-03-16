@@ -6,7 +6,7 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, armor_locations
-from detect.detect_common import armor_post_process
+from common.common import armor_post_process
 
 
 class YoLov8TRT(object):

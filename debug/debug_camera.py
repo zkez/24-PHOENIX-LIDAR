@@ -1,6 +1,5 @@
 import cv2
 import os
-from camera import mvsdk
 from camera.camera import CameraThread, tune_exposure
 
 

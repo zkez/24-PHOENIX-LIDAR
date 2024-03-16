@@ -4,7 +4,6 @@ import time
 import numpy as np
 
 from camera.camera import CameraThread
-from camera.camera_common import read_yaml
 from lidar.Lidar import Radar
 from detect.prediction_handler import Bbox_Handler
 from Calibration.location_alarmer import LocationAlarmer
@@ -15,7 +14,7 @@ from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import Static_UART
 from detect.detect import YoLov8TRT
-from detect.detect_common import car_armor_infer, armor_filter
+from common.common import armor_filter, car_armor_infer, read_yaml
 
 
 class RadarProcess:
@@ -147,7 +146,7 @@ class RadarProcess:
         # ret, locations, show_im = self.net.cated_infer(frame)
 
         # 双网络推理
-        armor_locations, img = car_armor_infer(self.car_net, self.armor_net, frame)
+        ret, armor_locations, img = car_armor_infer(self.car_net, self.armor_net, frame)
 
         # locations = armor_filter(locations)
         # self.panel.update_cam_pic(show_im)
@@ -157,9 +156,7 @@ class RadarProcess:
 
         pred_loc = None
 
-        # if ret:
-        if len(locations):
-
+        if ret:
             pred_loc = self.location_alarmor.refine_cood(locations, self.radar)
 
             if len(pred_loc):
@@ -184,4 +181,3 @@ class RadarProcess:
         Static_UART.stop_flag = True
         self.vi_saver.release()
         self.radar.__del__()
-

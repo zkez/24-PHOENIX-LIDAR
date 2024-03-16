@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 from camera.camera import CameraThread
-from camera.camera_common import read_yaml
+from common.common import read_yaml
 from macro import LOCATION_SAVE_DIR, location_targets
 from datetime import datetime
 

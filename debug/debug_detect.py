@@ -7,7 +7,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
 from detect.detect import YoLov8TRT
-from detect.detect_common import car_armor_infer
+from common.common import car_armor_infer
 from camera.camera import CameraThread
 
 if __name__ == "__main__":
