@@ -1,0 +1,70 @@
+import numpy as np
+import cv2
+from camera.camera import CameraThread
+
+rows, cols = 7, 12
+size = (cols, rows)
+
+objp = np.zeros((rows * cols, 3), np.float32)
+objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+
+obj_points = []
+img_points = []
+
+cap = CameraThread(0)
+
+if not cap.is_open():
+    print("Error: Failed to open camera.")
+    exit()
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Failed to capture frame.")
+        break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    ret, corners = cv2.findChessboardCorners(gray, size, None)
+
+    if ret:
+        obj_points.append(objp)
+
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
+        img_points.append(corners2)
+
+        frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
+
+    cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('Frame', 1280, 960)
+    cv2.imshow('Frame', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
+if len(obj_points) > 0:
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
+    if ret:
+        print("相机内参数矩阵:")
+        print(mtx)
+        print("\n畸变系数:")
+        print(dist)
+
+        # 计算重投影误差
+        total_error = 0
+        for i in range(len(obj_points)):
+            img_points_reprojected, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
+            error = cv2.norm(img_points[i], img_points_reprojected, cv2.NORM_L2) / len(img_points_reprojected)
+            total_error += error
+        mean_error = total_error / len(obj_points)
+        print("\n重投影误差:", mean_error)
+
+        np.savez("camera_calibration.npz", mtx=mtx, dist=dist)
+    else:
+        print("Error: Failed to calibrate camera.")
+else:
+    print("Error: No images provided for calibration.")
