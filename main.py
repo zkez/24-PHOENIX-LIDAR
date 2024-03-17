@@ -21,7 +21,7 @@ if __name__ == '__main__':
         # alarm_thread.start()
 
         if choice in ['Y', 'y']:
-            main_process.panel.set_cam()
+            # main_process.panel.set_cam()
             main_process.get_position_new()
         elif choice in ['N', 'n']:
             main_process.get_position_using_last()

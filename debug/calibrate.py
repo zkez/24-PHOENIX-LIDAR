@@ -3,12 +3,11 @@ import cv2
 from camera.camera import CameraThread
 
 
-def calibrate_camera():
-    rows, cols = 7, 12
+def calibrate_camera(rows, cols, grid, max_images=20):
     size = (cols, rows)
 
     objp = np.zeros((rows * cols, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+    objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2) * grid
 
     obj_points = []
     img_points = []
@@ -19,7 +18,9 @@ def calibrate_camera():
         print("Error: Failed to open camera.")
         exit()
 
-    while True:
+    image_count = 0
+
+    while image_count < max_images:
         ret, frame = cap.read()
 
         if not ret:
@@ -37,6 +38,7 @@ def calibrate_camera():
             img_points.append(corners2)
 
             frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
+            image_count += 1
 
         cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('Frame', 1280, 960)
@@ -73,4 +75,5 @@ def calibrate_camera():
 
 
 if __name__ == "__main__":
-    calibrate_camera()
+    calibrate_camera(7, 12, 20, max_images=200)
+
