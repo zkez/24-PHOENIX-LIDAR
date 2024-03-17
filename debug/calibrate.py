@@ -2,69 +2,75 @@ import numpy as np
 import cv2
 from camera.camera import CameraThread
 
-rows, cols = 7, 12
-size = (cols, rows)
 
-objp = np.zeros((rows * cols, 3), np.float32)
-objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+def calibrate_camera():
+    rows, cols = 7, 12
+    size = (cols, rows)
 
-obj_points = []
-img_points = []
+    objp = np.zeros((rows * cols, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
 
-cap = CameraThread(0)
+    obj_points = []
+    img_points = []
 
-if not cap.is_open():
-    print("Error: Failed to open camera.")
-    exit()
+    cap = CameraThread(0)
 
-while True:
-    ret, frame = cap.read()
+    if not cap.is_open():
+        print("Error: Failed to open camera.")
+        exit()
 
-    if not ret:
-        print("Error: Failed to capture frame.")
-        break
+    while True:
+        ret, frame = cap.read()
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if not ret:
+            print("Error: Failed to capture frame.")
+            break
 
-    ret, corners = cv2.findChessboardCorners(gray, size, None)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    if ret:
-        obj_points.append(objp)
+        ret, corners = cv2.findChessboardCorners(gray, size, None)
 
-        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
-        img_points.append(corners2)
+        if ret:
+            obj_points.append(objp)
 
-        frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
+            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
+            img_points.append(corners2)
 
-    cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('Frame', 1280, 960)
-    cv2.imshow('Frame', frame)
+            frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('Frame', 1280, 960)
+        cv2.imshow('Frame', frame)
 
-cap.release()
-cv2.destroyAllWindows()
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-if len(obj_points) > 0:
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
-    if ret:
-        print("相机内参数矩阵:")
-        print(mtx)
-        print("\n畸变系数:")
-        print(dist)
+    cap.release()
+    cv2.destroyAllWindows()
 
-        # 计算重投影误差
-        total_error = 0
-        for i in range(len(obj_points)):
-            img_points_reprojected, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
-            error = cv2.norm(img_points[i], img_points_reprojected, cv2.NORM_L2) / len(img_points_reprojected)
-            total_error += error
-        mean_error = total_error / len(obj_points)
-        print("\n重投影误差:", mean_error)
+    if len(obj_points) > 0:
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
+        if ret:
+            print("相机内参数矩阵:")
+            print(mtx)
+            print("\n畸变系数:")
+            print(dist)
 
-        np.savez("camera_calibration.npz", mtx=mtx, dist=dist)
+            # 计算重投影误差
+            total_error = 0
+            for i in range(len(obj_points)):
+                img_points_reprojected, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
+                error = cv2.norm(img_points[i], img_points_reprojected, cv2.NORM_L2) / len(img_points_reprojected)
+                total_error += error
+            mean_error = total_error / len(obj_points)
+            print("\n重投影误差:", mean_error)
+
+            np.savez("camera_calibration.npz", mtx=mtx, dist=dist)
+        else:
+            print("Error: Failed to calibrate camera.")
     else:
-        print("Error: Failed to calibrate camera.")
-else:
-    print("Error: No images provided for calibration.")
+        print("Error: No images provided for calibration.")
+
+
+if __name__ == "__main__":
+    calibrate_camera()
