@@ -11,33 +11,10 @@ import threading
 import random
 
 from macro import home_test, position_alarm, enemy, receiver_id
+from common.common import is_inside
 
 
-def is_inside(box: np.ndarray, point: np.ndarray):
-    """
-    判断点是否在凸四边形中
-    :param box:为凸四边形的四点 shape is (4,2)
-    :param point:为需判断的是否在内的点 shape is (2,)
-    """
-    assert box.shape == (4, 2)
-    assert point.shape == (2,)
-    AM = point - box[0]
-    AB = box[1] - box[0]
-    BM = point - box[1]
-    BC = box[2] - box[1]
-    CM = point - box[2]
-    CD = box[3] - box[2]
-    DM = point - box[3]
-    DA = box[0] - box[3]
-    a = np.cross(AM, AB)
-    b = np.cross(BM, BC)
-    c = np.cross(CM, CD)
-    d = np.cross(DM, DA)
-    return a >= 0 and b >= 0 and c >= 0 and d >= 0 or \
-        a <= 0 and b <= 0 and c <= 0 and d <= 0
-
-
-class Static_UART:
+class StaticUART:
     if home_test:
         home_width = 9.3
         home_height = 4.65
@@ -79,7 +56,7 @@ class Static_UART:
         """
         # Static_UART._lock.acquire()
         # 如果不适用深复制（或许浅复制也行），那么多进程时可能反而会更慢
-        Static_UART.robot_location = copy.deepcopy(location)
+        StaticUART.robot_location = copy.deepcopy(location)
         # Static_UART._lock.release()
 
     @staticmethod
@@ -87,18 +64,18 @@ class Static_UART:
         """
         将传入的位置信息 location 深复制到类变量 Static_UART.alarm_location  中
         """
-        Static_UART.alarm_location = copy.deepcopy(location)
-        Static_UART.alarm_flag = 1
+        StaticUART.alarm_location = copy.deepcopy(location)
+        StaticUART.alarm_flag = 1
 
     @staticmethod
     def radar_between_car(data: list, datalenth: int, receiver_id, ser):
         """
         将指定的数据通过串口 ser 传输给雷达设备
         """
-        SOF = Static_UART.create_SOF(datalenth + 6)  # datalength 指的是我要发的数据长度，前面还有6位的字节漂移
+        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指的是我要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))  # 将列表转换为字节流
-        dataid_sender_receiver = struct.pack('<3H', Static_UART.data_id, Static_UART.send_id, receiver_id)
+        dataid_sender_receiver = struct.pack('<3H', StaticUART.data_id, StaticUART.send_id, receiver_id)
         data_sum = SOF + CMDID + dataid_sender_receiver + data
         decodeData = binascii.b2a_hex(data_sum).decode('utf-8')  # 将 data_sum 转换为十六进制表示，并通过 decode('utf-8') 将其解码为字符串
         data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
@@ -112,15 +89,15 @@ class Static_UART:
         根据 whether_random 参数来决定是否随机选择接收者
         """
         if whether_random:
-            return random.choice(Static_UART.receiver)
+            return random.choice(StaticUART.receiver)
         else:
-            return Static_UART.receiver[0]
+            return StaticUART.receiver[0]
 
     @staticmethod
     def radar_map(ID, X, Y):
         Z = 1
         try:
-            SOF = Static_UART.create_SOF(14)
+            SOF = StaticUART.create_SOF(14)
             CMDID = (b'\x05' b'\x03')
             data = struct.pack("<1H3f", ID, X, Y, Z)  # 按照格式 "<1H3f"打包为二进制数据
             data1 = SOF + CMDID + data
@@ -137,8 +114,8 @@ class Static_UART:
         """
         将传入坐标（x,y）转换为相对于真实场地的坐标值x,y
         """
-        new_x = x * Static_UART.real_width / Static_UART.home_width
-        new_y = y * Static_UART.real_height / Static_UART.home_height
+        new_x = x * StaticUART.real_width / StaticUART.home_width
+        new_y = y * StaticUART.real_height / StaticUART.home_height
 
         return new_x, new_y
 
@@ -147,8 +124,8 @@ class Static_UART:
         """
         将传入坐标（numpy）转换为相对于真实场地的坐标值(numpy)
         """
-        new_x = numpy_xy[0] * Static_UART.real_width / Static_UART.home_width
-        new_y = numpy_xy[1] * Static_UART.real_height / Static_UART.home_height
+        new_x = numpy_xy[0] * StaticUART.real_width / StaticUART.home_width
+        new_y = numpy_xy[1] * StaticUART.real_height / StaticUART.home_height
         return np.array([new_x, new_y])
 
     @staticmethod
@@ -157,24 +134,24 @@ class Static_UART:
         通过串口传输位置信息，判断是否报警
         """
         try:
-            for row in Static_UART.robot_location:
+            for row in StaticUART.robot_location:
                 target_id = int(row[0])
-                if target_id in Static_UART.specific_color[enemy]:
+                if target_id in StaticUART.specific_color[enemy]:
                     x, y = float(row[1]), float(row[2])
                     # check_xy 之后获得 真实场地的xy
-                    x, y = Static_UART.xy_check(x, y)
+                    x, y = StaticUART.xy_check(x, y)
                     print(x, y)
-                    hexer = Static_UART.radar_map(target_id, x, y)
+                    hexer = StaticUART.radar_map(target_id, x, y)
                     ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
-                    for alarm in position_alarm[Static_UART.alarm_enemy]:
+                    for alarm in position_alarm[StaticUART.alarm_enemy]:
                         # 检查当前目标ID是否在报警相关数据中，并调用 is_inside() 函数判断机器人的位置是否在报警区域内
                         if target_id in alarm[0] and is_inside(np.array(alarm[1]),
-                                                               Static_UART.alarm_xy_check(row[1:3])):
-                            data = Static_UART.handle_id(target_id) + Static_UART.handle_id(alarm[-1])
+                                                               StaticUART.alarm_xy_check(row[1:3])):
+                            data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
                             print(data)
                             # print(Static_UART.random_receiver(False if home_test else True))
-                            Static_UART.radar_between_car(data, datalenth=4,
-                                                          receiver_id=Static_UART.random_receiver(
+                            StaticUART.radar_between_car(data, datalenth=4,
+                                                          receiver_id=StaticUART.random_receiver(
                                                               104 if home_test else True), ser=ser)
                 time.sleep(0.1)
         except:
@@ -201,8 +178,6 @@ class Static_UART:
     @staticmethod
     def advanced_loop(ser):
         while 1:
-            Static_UART.Robot_Data_Transmit_Map(ser)
-            if Static_UART.stop_flag:
+            StaticUART.Robot_Data_Transmit_Map(ser)
+            if StaticUART.stop_flag:
                 break
-
-

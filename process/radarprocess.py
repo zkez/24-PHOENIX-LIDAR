@@ -12,7 +12,7 @@ from macro import MAP_PATH, enemy, home_test, map_size, img_sz\
 from Calibration.location import locate_record, locate_pick
 from panel import Dashboard
 from debug import Debugger
-from referee_system.static_uart import Static_UART
+from referee_system.static_uart import StaticUART
 from detect.detect import YoLov8TRT
 from common.common import armor_filter, car_armor_infer, read_yaml
 
@@ -166,8 +166,8 @@ class RadarProcess:
             if isinstance(pred_loc, np.ndarray):
                 self.debugger.pred_loc_debugger(pred_loc)
                 self.change_id_2_uart(pred_loc)
-                Static_UART.push_loc(pred_loc)
-                Static_UART.push_alarm(pred_loc)
+                StaticUART.push_loc(pred_loc)
+                StaticUART.push_alarm(pred_loc)
 
         if debug:
             self.panel.update_map_mood(self.bbox_handler.draw_on_map(pred_loc, self.map.copy()))
@@ -178,6 +178,6 @@ class RadarProcess:
     def stop_and_release(self):
         self.cap.release()
         # self.uart_proce.terminate()
-        Static_UART.stop_flag = True
+        StaticUART.stop_flag = True
         self.vi_saver.release()
         self.radar.__del__()
