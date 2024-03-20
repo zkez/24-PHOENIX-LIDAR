@@ -97,7 +97,7 @@ def car_armor_infer(carNet, armorNet, frame):
         locations.append(armor_location)
         array_locations = np.concatenate(locations, axis=0)
 
-        for i in range(len(armor_boxes)):
+        for i in range(len(armor_location)):
             cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
                           (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
             cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
@@ -108,7 +108,7 @@ def car_armor_infer(carNet, armorNet, frame):
         locations.pop()
         return True, array_locations.reshape(-1, 14), image_raw[0]
     else:
-        return False, None, frame
+        return False, [], frame
 
 
 def armor_filter(armors):
@@ -155,3 +155,27 @@ def read_yaml(camera_type):
     except Exception as e:
         print("[ERROR] {0}".format(e))
         return False, None, None, None, None
+
+
+def is_inside(box: np.ndarray, point: np.ndarray):
+    """
+    判断点是否在凸四边形中
+    :param box:为凸四边形的四点 shape is (4,2)
+    :param point:为需判断的是否在内的点 shape is (2,)
+    """
+    assert box.shape == (4, 2)
+    assert point.shape == (2,)
+    AM = point - box[0]
+    AB = box[1] - box[0]
+    BM = point - box[1]
+    BC = box[2] - box[1]
+    CM = point - box[2]
+    CD = box[3] - box[2]
+    DM = point - box[3]
+    DA = box[0] - box[3]
+    a = np.cross(AM, AB)
+    b = np.cross(BM, BC)
+    c = np.cross(CM, CD)
+    d = np.cross(DM, DA)
+    return a >= 0 and b >= 0 and c >= 0 and d >= 0 or \
+        a <= 0 and b <= 0 and c <= 0 and d <= 0

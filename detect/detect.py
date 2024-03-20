@@ -300,6 +300,112 @@ class YoLov8TRT(object):
         return boxes
 
 
+class Track(object):
+    frameCount = 0
+    previous_boxes = np.zeros(1)
+
+    @staticmethod
+    def car_armor_infer(carNet, armorNet, frame):
+        locations = []
+        image_raw, use_time_car, car_boxes, car_scores, car_classID, car_location \
+            = carNet.infer([frame], flag='car')
+
+        for j in range(len(car_boxes)):
+            box = car_boxes[j]
+            img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+            img_raw, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
+                = armorNet.infer([img], flag='armor')
+
+            armor_post_process(armor_location, box)
+            locations.append(armor_location)
+            array_locations = np.concatenate(locations, axis=0)
+
+            for i in range(len(armor_location)):
+                cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                              (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+                cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
+                            (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (0, 255, 0), 2)
+
+        if len(locations) > 0:
+            locations.pop()
+            return True, array_locations, image_raw[0]
+        else:
+            return False, [], frame
+
+    def run(self, YOLOv8_car, YOLOv8_armor, frame):
+        if self.frameCount == 0:
+            r, locations, img = self.car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
+            self.previous_boxes = locations
+            self.frameCount += 1
+            if len(locations) > 0:
+                locations.pop()
+                return True, locations.reshape(-1, 14), img
+            else:
+                return False, [], img
+        else:
+            locations = []
+            image_raw, use_time_car, car_boxes, car_scores, car_classID, car_location \
+                = YOLOv8_car.infer([frame], flag='car')
+
+            for j in range(len(car_boxes)):
+                box = car_boxes[j]
+                img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                img_raw, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location \
+                    = YOLOv8_armor.infer([img], flag='armor')
+
+                armor_post_process(armor_location, box)
+                if len(armor_location) == 0 and self.previous_boxes is not np.zeros(1):
+                    armor_location = self.match_boxes(box, self.previous_boxes)
+
+                locations.append(armor_location)
+                array_locations = np.concatenate(locations, axis=0)
+
+                for i in range(len(armor_location)):
+                    cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
+                                  (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+                    cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
+                                (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 255, 0), 2)
+
+            if len(locations) > 0:
+                locations.pop()
+                self.previous_boxes = array_locations
+                return True, array_locations.reshape(-1, 14), image_raw[0]
+            else:
+                return False, [], frame
+
+    def match_boxes(self, current_boxes, previous_boxes, threshold=0.5):
+        again_armor_location = []
+        current_armor_box = [0, 0, 0, 0]
+        current_armor_box[0] = current_boxes[0] + 1 / 3 * (current_boxes[2] - current_boxes[0])
+        current_armor_box[1] = current_boxes[1] + 3 / 5 * (current_boxes[3] - current_boxes[1])
+        current_armor_box[2] = current_boxes[2] - 1 / 3 * (current_boxes[2] - current_boxes[0])
+        current_armor_box[3] = current_boxes[3] - 1 / 5 * (current_boxes[3] - current_boxes[1])
+
+        for i in range(len(previous_boxes)):
+            if self.calculate_iou(current_armor_box, previous_boxes[i][10:]) > threshold:
+                again_armor_location = previous_boxes[i]
+
+        if len(again_armor_location) == 0:
+            return None
+        else:
+            return again_armor_location
+
+    def calculate_iou(self, box1, box2):
+        inter_x1 = max(box1[0], box2[0])
+        inter_y1 = max(box1[1], box2[1])
+        inter_x2 = min(box1[2], box2[2])
+        inter_y2 = min(box1[3], box2[3])
+        inter_area = max(0, inter_x2 - inter_x1 + 1) * max(0, inter_y2 - inter_y1 + 1)
+
+        box1_area = (box1[2] - box1[0] + 1) * (box1[3] - box1[1] + 1)
+        box2_area = (box2[2] - box2[0] + 1) * (box2[3] - box2[1] + 1)
+
+        iou = inter_area / float(box1_area + box2_area - inter_area)
+        return iou
+
+
 class WarmUpThread(threading.Thread):
     def __init__(self, yolov8_wrapper):
         threading.Thread.__init__(self)

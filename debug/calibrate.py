@@ -75,5 +75,4 @@ def calibrate_camera(rows, cols, grid, max_images=20):
 
 
 if __name__ == "__main__":
-    calibrate_camera(7, 12, 20, max_images=200)
-
+    calibrate_camera(7, 12, 20, max_images=500)

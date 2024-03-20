@@ -4,10 +4,11 @@ import shutil
 import time
 import cv2
 import sys
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
-from detect.detect import YoLov8TRT
-from common.common import car_armor_infer
+from detect.detect import YoLov8TRT, Track
+from common.common import armor_filter
 from camera.camera import CameraThread
 
 if __name__ == "__main__":
@@ -26,12 +27,14 @@ if __name__ == "__main__":
 
     cap = CameraThread(0)
     try:
+        detect = Track()
         while True:
             t1 = time.time()
             ret, frame = cap.read()
             if ret:
-                r, locations, img = car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
-                print(locations)
+                r, results, img = detect.run(YOLOv8_car, YOLOv8_armor, frame)
+                results = armor_filter(results)
+                print(results)
             else:
                 break
             cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
