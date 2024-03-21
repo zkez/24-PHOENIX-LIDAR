@@ -13,8 +13,8 @@ from Calibration.location import locate_record, locate_pick
 from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import StaticUART
-from detect.detect import YoLov8TRT
-from common.common import armor_filter, car_armor_infer, read_yaml
+from detect.detect import YoLov8TRT, Detect
+from common.common import armor_filter, read_yaml
 
 
 class RadarProcess:
@@ -43,6 +43,7 @@ class RadarProcess:
         # self.net = Predictor(NET_PATH, model_imgsz)
         self.car_net = YoLov8TRT(car_engine_file_path)
         self.armor_net = YoLov8TRT(armor_engine_file_path)
+        self.detect = Detect()
 
         self.position_flag = False
         self._position_flag = np.array([self.position_flag])
@@ -144,12 +145,11 @@ class RadarProcess:
 
         # 单网络推理
         # ret, locations, show_im = self.net.cated_infer(frame)
-
-        # 双网络推理
-        ret, armor_locations, img = car_armor_infer(self.car_net, self.armor_net, frame)
-
         # locations = armor_filter(locations)
         # self.panel.update_cam_pic(show_im)
+
+        # 双网络推理
+        ret, armor_locations, img = self.detect.run(self.car_net, self.armor_net, frame)
 
         locations = armor_filter(armor_locations)
         self.panel.update_cam_pic(img)

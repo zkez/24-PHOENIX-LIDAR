@@ -7,7 +7,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
-from detect.detect import YoLov8TRT, Track
+from detect.detect import YoLov8TRT, Detect
 from common.common import armor_filter
 from camera.camera import CameraThread
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     cap = CameraThread(0)
     try:
-        detect = Track()
+        detect = Detect()
         while True:
             t1 = time.time()
             ret, frame = cap.read()

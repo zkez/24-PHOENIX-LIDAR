@@ -300,9 +300,9 @@ class YoLov8TRT(object):
         return boxes
 
 
-class Track(object):
+class Detect(object):
     frameCount = 0
-    previous_boxes = np.zeros(1)
+    previous_boxes = None
 
     @staticmethod
     def car_armor_infer(carNet, armorNet, frame):
@@ -329,20 +329,20 @@ class Track(object):
 
         if len(locations) > 0:
             locations.pop()
-            return True, array_locations, image_raw[0]
+            return True, array_locations.reshape(-1, 14), image_raw[0]
         else:
-            return False, [], frame
+            return False, None, frame
 
     def run(self, YOLOv8_car, YOLOv8_armor, frame):
         if self.frameCount == 0:
             r, locations, img = self.car_armor_infer(YOLOv8_car, YOLOv8_armor, frame)
             self.previous_boxes = locations
             self.frameCount += 1
-            if len(locations) > 0:
+            if locations is not None:
                 locations.pop()
-                return True, locations.reshape(-1, 14), img
+                return True, locations, img
             else:
-                return False, [], img
+                return False, None, img
         else:
             locations = []
             image_raw, use_time_car, car_boxes, car_scores, car_classID, car_location \
@@ -355,7 +355,7 @@ class Track(object):
                     = YOLOv8_armor.infer([img], flag='armor')
 
                 armor_post_process(armor_location, box)
-                if len(armor_location) == 0 and self.previous_boxes is not np.zeros(1):
+                if armor_location is None and self.previous_boxes is not None:
                     armor_location = self.match_boxes(box, self.previous_boxes)
 
                 locations.append(armor_location)
@@ -370,10 +370,10 @@ class Track(object):
 
             if len(locations) > 0:
                 locations.pop()
-                self.previous_boxes = array_locations
+                self.previous_boxes = array_locations.reshape(-1, 14)
                 return True, array_locations.reshape(-1, 14), image_raw[0]
             else:
-                return False, [], frame
+                return False, None, frame
 
     def match_boxes(self, current_boxes, previous_boxes, threshold=0.5):
         again_armor_location = []
@@ -383,6 +383,7 @@ class Track(object):
         current_armor_box[2] = current_boxes[2] - 1 / 3 * (current_boxes[2] - current_boxes[0])
         current_armor_box[3] = current_boxes[3] - 1 / 5 * (current_boxes[3] - current_boxes[1])
 
+        previous_boxes = previous_boxes.reshape(-1, 14)
         for i in range(len(previous_boxes)):
             if self.calculate_iou(current_armor_box, previous_boxes[i][10:]) > threshold:
                 again_armor_location = previous_boxes[i]
