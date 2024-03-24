@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+MIN_HITS = 2
+
 
 class KalmanTracker:
     def __init__(self, init_rect):
@@ -45,7 +47,7 @@ class KalmanTracker:
         p = self.kf.predict()
         self.m_age += 1
 
-        if self.m_time_since_update > 0 and self.m_hits < sort_param.MIN_HITS:
+        if self.m_time_since_update > 0 and self.m_hits < MIN_HITS:
             self.m_hit_streak = 0
         self.m_time_since_update += 1
 
@@ -101,6 +103,3 @@ class KalmanTracker:
 
     def getHits(self):
         return self.m_hit_streak
-
-
-

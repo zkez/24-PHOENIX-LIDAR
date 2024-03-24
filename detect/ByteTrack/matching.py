@@ -4,17 +4,16 @@ import scipy
 import lap
 from scipy.spatial.distance import cdist
 import time
-# from cython_bbox import bbox_overlaps as bbox_ious
 
 import sys
-sys.path.append('/home/zk/MOT1/ByteTrack')
-import kalman_filter
+sys.path.append('../')
+from detect.ByteTrack import kalman_filter
 
 
 def bbox_ious(boxes, query_boxes):
     N = boxes.shape[0]
     K = query_boxes.shape[0]
-    overlaps = np.zeros((N, K), dtype=np.float)
+    overlaps = np.zeros((N, K))
     for k in range(K):
         box_area = (
             (query_boxes[k, 2] - query_boxes[k, 0] + 1) *
@@ -95,13 +94,13 @@ def ious(atlbrs, btlbrs):
     :type atlbrs: list[tlbr] | np.ndarray
     :rtype ious np.ndarray
     """
-    ious = np.zeros((len(atlbrs), len(btlbrs)), dtype=np.float)
+    ious = np.zeros((len(atlbrs), len(btlbrs)))
     if ious.size == 0:
         return ious
 
     ious = bbox_ious(
-        np.ascontiguousarray(atlbrs, dtype=np.float),
-        np.ascontiguousarray(btlbrs, dtype=np.float)
+        np.ascontiguousarray(atlbrs),
+        np.ascontiguousarray(btlbrs)
     )
 
     return ious
