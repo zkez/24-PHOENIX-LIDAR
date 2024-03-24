@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from camera.camera import CameraThread
 
+
 def calibrate_camera(rows, cols, grid, max_images=20):
     size = (cols, rows)
 
