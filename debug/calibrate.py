@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 from camera.camera import CameraThread
 
-
 def calibrate_camera(rows, cols, grid, max_images=20):
     size = (cols, rows)
 
@@ -19,6 +18,7 @@ def calibrate_camera(rows, cols, grid, max_images=20):
         exit()
 
     image_count = 0
+    frame_count = 0
 
     while image_count < max_images:
         ret, frame = cap.read()
@@ -32,13 +32,16 @@ def calibrate_camera(rows, cols, grid, max_images=20):
         ret, corners = cv2.findChessboardCorners(gray, size, None)
 
         if ret:
-            obj_points.append(objp)
+            if frame_count % 10 == 0:  # 每隔10帧取一个点
+                obj_points.append(objp)
 
-            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
-            img_points.append(corners2)
+                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
+                img_points.append(corners2)
 
-            frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
-            image_count += 1
+                frame = cv2.drawChessboardCorners(frame, size, corners2, ret)
+                image_count += 1
+
+        frame_count += 1
 
         cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('Frame', 1280, 960)
@@ -75,4 +78,4 @@ def calibrate_camera(rows, cols, grid, max_images=20):
 
 
 if __name__ == "__main__":
-    calibrate_camera(7, 12, 20, max_images=500)
+    calibrate_camera(8, 12, 20, max_images=800)
