@@ -228,6 +228,9 @@ class YoLov8TRT(object):
         r_4xyxy = np.array(result_4xyxy).reshape(-1, 8)
 
         det = np.concatenate((r_4xyxy, r_scores, r_classID, r_boxes), axis=1)
+        # xyxy -> xywh
+        det[:, 12] = det[:, 12] - det[:, 10]
+        det[:, 13] = det[:, 13] - det[:, 11]
         return result_boxes, result_scores, result_classID, det
 
     def bbox_iou(self, box1, box2, x1y1x2y2=True):
@@ -322,7 +325,7 @@ class Detect(object):
 
             for i in range(len(armor_location)):
                 cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
-                              (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+                              (int(armor_location[i][12]+armor_location[i][10]), int(armor_location[i][13]+armor_location[i][11])), (0, 255, 0), 2)
                 cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                             (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 255, 0), 2)
@@ -339,7 +342,6 @@ class Detect(object):
             self.previous_boxes = locations
             self.frameCount += 1
             if locations is not None:
-                locations.pop()
                 return True, locations, img
             else:
                 return False, None, img
@@ -363,7 +365,7 @@ class Detect(object):
 
                 for i in range(len(armor_location)):
                     cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
-                                  (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
+                                  (int(armor_location[i][12]+armor_location[i][10]), int(armor_location[i][13]+armor_location[i][11])), (0, 255, 0), 2)
                     cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                                 (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (0, 255, 0), 2)
@@ -375,7 +377,7 @@ class Detect(object):
             else:
                 return False, None, frame
 
-    def match_boxes(self, current_boxes, previous_boxes, threshold=0.5):
+    def match_boxes(self, current_boxes, previous_boxes, threshold=0.3):
         again_armor_location = []
         current_armor_box = [0, 0, 0, 0]
         current_armor_box[0] = current_boxes[0] + 1 / 3 * (current_boxes[2] - current_boxes[0])
@@ -393,7 +395,8 @@ class Detect(object):
         else:
             return again_armor_location
 
-    def calculate_iou(self, box1, box2):
+    @staticmethod
+    def calculate_iou(box1, box2):
         inter_x1 = max(box1[0], box2[0])
         inter_y1 = max(box1[1], box2[1])
         inter_x2 = min(box1[2], box2[2])
@@ -484,17 +487,3 @@ class InferCameraThread(threading.Thread):
                 cv2.putText(self.frame, "{}".format(categories[int(armor_location[i][9])]),
                             (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 255, 0), 2)
-
-    def crop_image(self, frame):
-        frame_height, frame_width = frame.shape[0], frame.shape[1]
-
-        first_frame = frame[0:frame_height // 2, 0:frame_width // 2]
-        second_frame = frame[0:frame_height // 2, frame_width // 2:frame_width]
-        third_frame = frame[frame_height // 2:frame_height, 0:frame_width // 2]
-        forth_frame = frame[frame_height // 2:frame_height, frame_width // 2:frame_width]
-
-        group_image = [first_frame, second_frame, third_frame, forth_frame]
-
-        return group_image
-
-    # def crop_infer(self, group_image):
