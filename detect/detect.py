@@ -228,9 +228,7 @@ class YoLov8TRT(object):
         r_4xyxy = np.array(result_4xyxy).reshape(-1, 8)
 
         det = np.concatenate((r_4xyxy, r_scores, r_classID, r_boxes), axis=1)
-        # xyxy -> xywh
-        det[:, 12] = det[:, 12] - det[:, 10]
-        det[:, 13] = det[:, 13] - det[:, 11]
+
         return result_boxes, result_scores, result_classID, det
 
     def bbox_iou(self, box1, box2, x1y1x2y2=True):
@@ -325,7 +323,7 @@ class Detect(object):
 
             for i in range(len(armor_location)):
                 cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
-                              (int(armor_location[i][12]+armor_location[i][10]), int(armor_location[i][13]+armor_location[i][11])), (0, 255, 0), 2)
+                              (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
                 cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                             (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 255, 0), 2)
@@ -365,7 +363,7 @@ class Detect(object):
 
                 for i in range(len(armor_location)):
                     cv2.rectangle(image_raw[0], (int(armor_location[i][10]), int(armor_location[i][11])),
-                                  (int(armor_location[i][12]+armor_location[i][10]), int(armor_location[i][13]+armor_location[i][11])), (0, 255, 0), 2)
+                                  (int(armor_location[i][12]), int(armor_location[i][13])), (0, 255, 0), 2)
                     cv2.putText(image_raw[0], "{}".format(categories[int(armor_location[i][9])]),
                                 (int(armor_location[i][10]), int(armor_location[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (0, 255, 0), 2)

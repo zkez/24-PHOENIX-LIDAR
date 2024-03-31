@@ -78,9 +78,8 @@ def armor_post_process(armor_location, car_box):
     # armor_location[:, 9] = classID
     armor_location[:, 10] += car_box[0]
     armor_location[:, 11] += car_box[1]
-    # w, h不变
-    # armor_location[:, 12] += car_box[0]
-    # armor_location[:, 13] += car_box[1]
+    armor_location[:, 12] += car_box[0]
+    armor_location[:, 13] += car_box[1]
 
 
 def armor_filter(armors):
