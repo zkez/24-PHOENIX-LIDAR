@@ -3,7 +3,7 @@ from macro import armor_list
 
 
 class LocationAlarmer:
-    _ids = {1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 8: 1, 9: 2, 10: 3, 11: 4, 12: 5}  # 装甲板编号到标准编号
+    _ids = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 0, 6: 10, 7: 11, 8: 12, 9: 13, 10: 14, 11: 9}  # 装甲板编号到标准编号
 
     # param
     _pred_time = 10  # 预测几次
@@ -195,7 +195,7 @@ class LocationAlarmer:
         for armor in self._ids.keys():
             if isinstance(radar_xyz, np.ndarray):
                 mask = radar_xyz[:, 0] == armor
-                # 这里有可能因为误识别或者其他原因，没有识别到车辆，但是识别到了诸如前哨站的东西，
+                # 这里有可能因为误识别或者其他原因，没有识别到车辆，但是识别到了诸如前哨站的东西
                 # 也会让l1变成None
                 if mask.any():
                     l1 = radar_xyz[mask].reshape(-1)

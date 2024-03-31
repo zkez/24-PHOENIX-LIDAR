@@ -15,7 +15,7 @@ class DetectorBox:
     def __init__(self, robot_id, conf, box):
         self.robot_id = robot_id  # 机器人编号
         self.conf = conf  # 机器人的置信度
-        self.box = box  # 机器人的识别位置
+        self.box = box  # 机器人的识别位置box: [x, y, w, h]
 
 
 class TrackBox:
@@ -25,7 +25,7 @@ class TrackBox:
         self.robot_id = -1  # 追踪目标的id
         self.resetRank = 0  # 重新分类等级
         self.resetCount = 0  # 重置计时器
-        self.classfiCount = 0  # 连续分类计时器
+        self.classifyCount = 0  # 连续分类计时器
         self.armorProb = 0  # 追踪目标的概率
         self.conf = 0  # 置信度
         self.tracker = KalmanTracker()  # 卡尔曼滤波器
@@ -57,12 +57,12 @@ class TargetDetect(object):
         self.matchedItems = set()  # 匹配到的目标
         self.matchedPairs = []  # 配对好的一对
 
-    def TargetSort(self, dectBoxes: List[DetectorBox], trackers: List[TrackBox]):
+    def TargetSort(self, detectBoxes: List[DetectorBox], trackers: List[TrackBox]):
         self.frameCount += 1
 
         # 初始化追踪器
         if len(trackers) == 0:
-            for dBox in dectBoxes:
+            for dBox in detectBoxes:
                 box = dBox.box
                 kBox = TrackBox()
                 kBox.tracker = KalmanTracker(box)
@@ -81,22 +81,22 @@ class TargetDetect(object):
                 trackers.remove(track)
 
         # 用于调试
-        if len(self.predictedBoxes) == 0 and len(dectBoxes) == 0:
+        if len(self.predictedBoxes) == 0 and len(detectBoxes) == 0:
             self.result = -1
             return self.result
 
         # 匈牙利算法预处理
         for i in range(len(self.predictedBoxes)):
             self.iouMatrix.append([])
-            for j in range(len(dectBoxes)):
-                self.iouMatrix[i].append(1 - get_iou(self.predictedBoxes[i], dectBoxes[j].box))
+            for j in range(len(detectBoxes)):
+                self.iouMatrix[i].append(1 - get_iou(self.predictedBoxes[i], detectBoxes[j].box))
 
         HungAlgo = linear_sum_assignment(self.iouMatrix)
         self.assignment = list(zip(HungAlgo[0], HungAlgo[1]))
 
         # 检测器多于追踪框，则认为有新的目标出现
-        if len(self.predictedBoxes) < len(dectBoxes):
-            self.allItems = str(range(dectBoxes))  # 将检测框中的目标为全部目标
+        if len(self.predictedBoxes) < len(detectBoxes):
+            self.allItems = str(range(detectBoxes))  # 将检测框中的目标为全部目标
             self.matchedItems = str(self.assignment[:len(self.predictedBoxes)])  # 将追踪框中的作为已配对
             self.unmatchedDetections = self.allItems - self.matchedItems  # 将上述两者的差集作为未配对的
         else:
@@ -119,14 +119,14 @@ class TargetDetect(object):
 
         # 对已分配队列进行处理，用检测结果对跟踪器进行更新
         for trackID, dectID in self.matchedPairs:
-            trackers[trackID].tracker.update(dectBoxes[dectID].box)
+            trackers[trackID].tracker.update(detectBoxes[dectID].box)
             trackers[trackID].situation = 1
-            trackers[trackID].conf = dectBoxes[dectID].conf
+            trackers[trackID].conf = detectBoxes[dectID].conf
 
         # 对没有匹配到的检测框创建追踪器
         for umd in self.unmatchedDetections:
-            tracker = KalmanTracker(dectBoxes[umd].box)
-            kBox = TrackBox(tracker, dectBoxes[umd].conf)
+            tracker = KalmanTracker(detectBoxes[umd].box)
+            kBox = TrackBox(tracker, detectBoxes[umd].conf)
             trackers.append(kBox)
 
         # 处理输出结果
@@ -150,4 +150,3 @@ class TargetDetect(object):
 
         trackers = [track for track in trackers if track.tracker.getSinceTime() <= MAX_AGE]
         return self.result
-

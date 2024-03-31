@@ -421,10 +421,10 @@ class WarmUpThread(threading.Thread):
 
 
 class InferVideoThread(threading.Thread):
-    def __init__(self, yolov8_wrapper_car, yolov8_wrapper_armor, video_path):
+    def __init__(self, YoLov8_wrapper_car, YoLov8_wrapper_armor, video_path):
         threading.Thread.__init__(self)
-        self.yolov8_wrapper_car = yolov8_wrapper_car
-        self.yolov8_wrapper_armor = yolov8_wrapper_armor
+        self.yolov8_wrapper_car = YoLov8_wrapper_car
+        self.yolov8_wrapper_armor = YoLov8_wrapper_armor
         self.video_path = video_path
 
     def run(self):

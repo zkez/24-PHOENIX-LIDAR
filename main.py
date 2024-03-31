@@ -5,7 +5,7 @@ import traceback
 import threading
 from process.radarprocess import RadarProcess
 from macro import position_choice, PLUGIN_LIBRARY
-from referee_system.static_uart import Static_UART
+from referee_system.static_uart import StaticUART
 
 
 if __name__ == '__main__':
@@ -15,8 +15,8 @@ if __name__ == '__main__':
         main_process = RadarProcess()
         choice = position_choice if isinstance(position_choice, str) else input(
             'Get new position? Y/y for yes, N/n for no\n')
-        # uart_thread = threading.Thread(target=Static_UART.advanced_loop, args=(ser, ), name='uart')
-        # alarm_thread = threading.Thread(target=Static_UART.alarm_loop, args=(ser, ), name='alarm')
+        # uart_thread = threading.Thread(target=StaticUART.advanced_loop, args=(ser, ), name='uart')
+        # alarm_thread = threading.Thread(target=StaticUART.alarm_loop, args=(ser, ), name='alarm')
         # uart_thread.start()
         # alarm_thread.start()
 

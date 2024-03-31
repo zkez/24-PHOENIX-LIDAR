@@ -40,7 +40,6 @@ class RadarProcess:
         self._scene = [self.bbox_handler]
         self.location_alarmor = LocationAlarmer(False, True)
 
-        # self.net = Predictor(NET_PATH, model_imgsz)
         self.car_net = YoLov8TRT(car_engine_file_path)
         self.armor_net = YoLov8TRT(armor_engine_file_path)
         self.detect = Detect()
@@ -66,14 +65,14 @@ class RadarProcess:
             flag, rvec1, tvec1 = locate_record(0, enemy)
             if flag:
                 self._position_flag[0] = True
-                # myshow.set_text("feedback", "Camera 0 pose init")
                 self.panel.update_text("[INFO] Camera 0 pose init")
+
                 # 将位姿存入反投影预警类
                 T, cp = self._scene[0].push_T_and_inver(rvec1, tvec1)
+
                 # 将位姿存入位置预警类
                 self.location_alarmor.push_T(T, cp, 0)
             else:
-                # myshow.set_text("feedback", "Camera 0 pose init error")
                 self.panel.update_text("[INFO] Camera 0 pose init meet error", is_warning=True)
 
     def get_position_new(self):
@@ -143,11 +142,6 @@ class RadarProcess:
             time.sleep(0.05)
             return
 
-        # 单网络推理
-        # ret, locations, show_im = self.net.cated_infer(frame)
-        # locations = armor_filter(locations)
-        # self.panel.update_cam_pic(show_im)
-
         # 双网络推理
         ret, armor_locations, img = self.detect.run(self.car_net, self.armor_net, frame)
 
@@ -177,7 +171,6 @@ class RadarProcess:
 
     def stop_and_release(self):
         self.cap.release()
-        # self.uart_proce.terminate()
         StaticUART.stop_flag = True
         self.vi_saver.release()
         self.radar.__del__()

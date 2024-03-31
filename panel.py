@@ -10,7 +10,7 @@ from camera.mvsdk import CameraReadParameterFromFile
 class Dashboard(tk.Tk):
     # hard code part
     zoom_in_ratio_cam = 0.32
-    zoom_in_ratio_map = 0.60
+    zoom_in_ratio_map = 0.50
 
     def __init__(self, cam_img_sz: list, map_img_sz: list, main_process=None):
         super().__init__()
@@ -90,8 +90,7 @@ class Dashboard(tk.Tk):
         self.textbox.see('end')
         self.update()
 
-        # 更新摄像头图片
-
+    # 更新摄像头图片
     def update_cam_pic(self, frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if self.zoom_in_ratio_cam:
@@ -161,9 +160,9 @@ if __name__ == "__main__":
     app = Dashboard(img_sz, map_size)
     map = cv2.imread(MAP_PATH)
 
-    # 缩放图像
-    scale_factor = 0.2
-    map_image = cv2.resize(map, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
+    # # 缩放图像
+    # scale_factor = 0.5
+    # map_image = cv2.resize(map, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
 
     cap = CameraThread(0)
 
@@ -178,4 +177,4 @@ if __name__ == "__main__":
             break
         ret, frame = cap.read()
         app.update_cam_pic(frame)
-        app.update_map_mood(map_image)
+        app.update_map_mood(map)

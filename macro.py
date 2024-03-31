@@ -5,7 +5,7 @@ debug = False
 CAMERA_CONFIG_DIR = 'Camera_config'
 CACHE_CONFIG_SAVE_DIR = 'save_stuff'
 preview_location = [(100, 100)]
-PC_STORE_DIR = '/home/zk/zk/save_stuff/points'
+PC_STORE_DIR = '../save_stuff/points'
 LIDAR_TOPIC_NAME = '/livox/lidar'
 LOCATION_SAVE_DIR = 'save_stuff/position'
 
@@ -15,17 +15,17 @@ img_sz = [3088, 2064]
 armor_locations = []
 
 VIDEO_SAVE_DIR = 'save_stuff/video'
-MAP_PATH = 'save_stuff/map.jpg'
+MAP_PATH = 'save_stuff/output_map.jpg'
 
-PLUGIN_LIBRARY = "/home/zk/tensorrtx/yolov8/build/libmyplugins.so"
-car_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8m_car.engine"
-armor_engine_file_path = "/home/zk/tensorrtx/yolov8/build/yolov8s_armor.engine"
+PLUGIN_LIBRARY = "../../tensorrtx/yolov8/build/libmyplugins.so"
+car_engine_file_path = "../../tensorrtx/yolov8/build/yolov8m_car.engine"
+armor_engine_file_path = "../../tensorrtx/yolov8/build/yolov8s_armor.engine"
 CONF_THRESH_CAR = 0.5
 CONF_THRESH_ARMOR = 0.01
 IOU_THRESHOLD = 0.4
 
 model_imgsz = (640, 640)
-map_size = [900, 480]
+map_size = [960, 536]
 
 position_choice = 'y'
 
