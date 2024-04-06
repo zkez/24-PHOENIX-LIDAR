@@ -8,12 +8,12 @@ from lidar.Lidar import Radar
 from detect.prediction_handler import Bbox_Handler
 from Calibration.location_alarmer import LocationAlarmer
 from macro import MAP_PATH, enemy, home_test, map_size, img_sz\
-    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path
+    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, ArmorFlag
 from Calibration.location import locate_record, locate_pick
 from panel import Dashboard
 from debug import Debugger
 from referee_system.static_uart import StaticUART
-from detect.detect import YoLov8TRT, Detect
+from detect.detect import YoLov8TRT, Detect, DetectArmor
 from common.common import armor_filter, read_yaml
 
 
@@ -40,9 +40,11 @@ class RadarProcess:
         self._scene = [self.bbox_handler]
         self.location_alarmor = LocationAlarmer(False, True)
 
+        self.ArmorFlag = ArmorFlag
         self.car_net = YoLov8TRT(car_engine_file_path)
         self.armor_net = YoLov8TRT(armor_engine_file_path)
         self.detect = Detect()
+        self.armor = DetectArmor()
 
         self.position_flag = False
         self._position_flag = np.array([self.position_flag])
@@ -136,14 +138,16 @@ class RadarProcess:
         if not self.cap.is_open():
             self.cap.open()
         flag, frame = self.cap.read()
-        # self.panel.update_cam_pic(frame)
         if not flag:
             self.panel.update_text('The camera could NOT be opened')
             time.sleep(0.05)
             return
 
-        # 双网络推理
-        ret, armor_locations, img = self.detect.run(self.car_net, self.armor_net, frame)
+        # 网络推理
+        if not self.ArmorFlag:
+            ret, armor_locations, img = self.detect.run(self.car_net, self.armor_net, frame)
+        else:
+            ret, armor_locations, img = self.armor.armor_infer(self.armor_net, frame)
 
         locations = armor_filter(armor_locations)
         self.panel.update_cam_pic(img)
