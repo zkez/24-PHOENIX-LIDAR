@@ -408,6 +408,45 @@ class Detect(object):
         return iou
 
 
+# 仅用于对方车辆涂装奇异，车辆识别效果不佳，直接装甲板识别
+class DetectArmor(object):
+    def armor_infer(self, armorNet, frame):
+        array_locations = self.crop_frame_infer(armorNet, frame)
+        for i in range(len(array_locations)):
+            cv2.rectangle(frame, (int(array_locations[i][10]), int(array_locations[i][11])),
+                          (int(array_locations[i][12]), int(array_locations[i][13])), (0, 255, 0), 2)
+            cv2.putText(frame, "{}".format(categories[int(array_locations[i][9])]),
+                        (int(array_locations[i][10]), int(array_locations[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 255, 0), 2)
+
+        if array_locations is not None:
+            return True, array_locations.reshape(-1, 14), frame
+        else:
+            return False, None, frame
+
+    @staticmethod
+    def crop_frame_infer(armorNet, frame):
+        locations = []
+        frame_height, frame_width = frame.shape[0], frame.shape[1]
+
+        for i in range(4):
+            for j in range(4):
+                x1 = (frame_width // 4) * i
+                x2 = (frame_width // 4) * (i + 1)
+                y1 = (frame_height // 4) * j
+                y2 = (frame_height // 4) * (j + 1)
+
+                cropped_frame = frame[y1:y2, x1:x2]
+                img, use_time, armor_boxes, armor_scores, armor_classID, armor_location = armorNet.infer(
+                    [cropped_frame], flag='armor')
+                if len(armor_boxes) > 0:
+                    armor_post_process(armor_location, [x1, y1, x2, y2])
+                    locations.append(armor_location)
+
+        array_locations = np.concatenate(locations, axis=0)
+        return array_locations
+
+
 class WarmUpThread(threading.Thread):
     def __init__(self, yolov8_wrapper):
         threading.Thread.__init__(self)
