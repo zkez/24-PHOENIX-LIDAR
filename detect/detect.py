@@ -5,8 +5,12 @@ import numpy as np
 import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
+
+import sys
+sys.path.append('..')
 from macro import CONF_THRESH_CAR, IOU_THRESHOLD, categories, armor_locations, CONF_THRESH_ARMOR
 from common.common import armor_post_process
+from detect.sort import Sort, convert_detection_results
 
 
 class YoLov8TRT(object):
@@ -301,6 +305,7 @@ class YoLov8TRT(object):
         return boxes
 
 
+# 单纯上下几帧匹配
 class Detect(object):
     frameCount = 0
     previous_boxes = None
@@ -445,6 +450,46 @@ class DetectArmor(object):
 
         array_locations = np.concatenate(locations, axis=0)
         return array_locations
+
+
+class SortDetect(object):
+    def __init__(self):
+        self.sort = Sort(max_age=20, min_hits=5, iou_threshold=0.3)
+        self.armor_trackers = {}
+
+    def Sort_infer(self, carNet, armorNet, frame):
+        car_trackers = []
+        img_car, use_time_car, car_boxes, car_scores, car_classID, car_location = carNet.infer(
+            [frame], flag='car')
+        detections = convert_detection_results(car_boxes, car_scores)
+        tracks = self.sort.update(detections)
+
+        for track in tracks:
+            track_id = track[4]
+            bbox = track[:4]
+            x1, y1, x2, y2 = bbox
+
+            if bbox[0] < 0 or bbox[1] < 0 or bbox[2] > frame.shape[1] or bbox[3] > frame.shape[0]:
+                continue
+            else:
+                if track_id not in self.armor_trackers:
+                    img_armor, use_time_armor, armor_boxes, armor_scores, armor_classID, armor_location = armorNet.infer(
+                        [frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]], flag='armor')
+                    if armor_classID is not None and len(armor_classID) > 0:
+                        self.armor_trackers[track_id] = armor_classID
+                        car_trackers.append([x1, y1, x2, y2, armor_classID.tolist()[0]])
+                else:
+                    armor_ID = self.armor_trackers[track_id]
+                    car_trackers.append([x1, y1, x2, y2, armor_ID.tolist()[0]])
+
+        for i in range(len(car_trackers)):
+            cv2.rectangle(frame, (int(car_trackers[i][0]), int(car_trackers[i][1])),
+                          (int(car_trackers[i][2]), int(car_trackers[i][3])), (0, 255, 0), 2)
+            cv2.putText(frame, "{}".format(categories[int(car_trackers[i][4])]),
+                        (int(car_trackers[i][0]), int(car_trackers[i][1])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 255, 0), 2)
+
+        return car_trackers, frame
 
 
 class WarmUpThread(threading.Thread):

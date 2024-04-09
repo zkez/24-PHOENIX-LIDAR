@@ -212,6 +212,7 @@ class Sort(object):
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :])
             self.trackers.append(trk)
+
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
@@ -221,6 +222,7 @@ class Sort(object):
             # remove dead tracklet
             if (trk.time_since_update > self.max_age):
                 self.trackers.pop(i)
+
         if (len(ret) > 0):
             return np.concatenate(ret)
         return np.empty((0, 5))
