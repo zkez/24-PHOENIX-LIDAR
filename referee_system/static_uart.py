@@ -15,7 +15,6 @@ from common.common import is_inside
 
 
 class ReadUART(object):
-
     _progress = np.zeros(6, dtype=int)  # 初始化雷达标记进度
     _Doubling_times = 0  # 翻倍机会次数
     _HP = np.ones(16, dtype=int) * 500  # 初始化机器人血量
@@ -129,7 +128,7 @@ class StaticUART:
     alarm_enemy = ['enemy_is_red', 'enemy_is_blue'][enemy]
 
     send_id = 9 if enemy else 109
-    receiver_id = 0x8080
+    referee_system_receiver_id = 0x8080
 
     car_data_id = 0x020F  # 车间通信的子内容ID
     lidar_data_id = 0x0121  # 雷达自主决策的子内容ID
@@ -157,28 +156,28 @@ class StaticUART:
         """
         将传入的位置信息 location 深复制到类变量 Static_UART.robot_location 中
         """
-        # Static_UART._lock.acquire()
+        StaticUART._lock.acquire()
         # 如果不适用深复制（或许浅复制也行），那么多进程时可能反而会更慢
         StaticUART.robot_location = copy.deepcopy(location)
-        # Static_UART._lock.release()
+        StaticUART._lock.release()
 
     @staticmethod
     def push_alarm(location):
         """
-        将传入的位置信息 location 深复制到类变量 Static_UART.alarm_location  中
+        将传入的位置信息 location 深复制到类变量 Static_UART.alarm_location 中
         """
         StaticUART.alarm_location = copy.deepcopy(location)
         StaticUART.alarm_flag = 1
 
     @staticmethod
-    def radar_between_car(data: list, datalenth: int, receiver_id, ser):
+    def radar_between_car(data: list, datalenth: int, receiver_ID, ser):
         """
         将指定的数据通过串口 ser 传输给雷达设备
         """
         SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))  # 将列表转换为字节流
-        dataid_sender_receiver = struct.pack('<3H', StaticUART.car_data_id, StaticUART.send_id, receiver_id)
+        dataid_sender_receiver = struct.pack('<3H', StaticUART.car_data_id, StaticUART.send_id, receiver_ID)
         data_sum = SOF + CMDID + dataid_sender_receiver + data
         decodeData = binascii.b2a_hex(data_sum).decode('utf-8')  # 将 data_sum 转换为十六进制表示，并通过 decode('utf-8') 将其解码为字符串
         data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
@@ -194,7 +193,7 @@ class StaticUART:
         SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))
-        dataid_sender_receiver = struct.pack('<3H', StaticUART.lidar_data_id, StaticUART.send_id, StaticUART.receiver_id)
+        dataid_sender_receiver = struct.pack('<3H', StaticUART.lidar_data_id, StaticUART.send_id, StaticUART.referee_system_receiver_id)
         data_sum = SOF + CMDID + dataid_sender_receiver + data
         decodeData = binascii.b2a_hex(data_sum).decode('utf-8')
         data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
@@ -246,7 +245,7 @@ class StaticUART:
         return np.array([new_x, new_y])
 
     @staticmethod
-    def Robot_Data_Transmit_Map(self, ser):
+    def Robot_Data_Transmit_Map(ser):
         """
         通过串口传输位置信息，并且判断是否报警
         """
@@ -255,11 +254,12 @@ class StaticUART:
                 target_id = int(row[0])
                 if target_id in StaticUART.specific_color[enemy]:
                     x, y = float(row[1]), float(row[2])
-                    # check_xy 之后获得 真实场地的xy
+                    # check_xy 之后获得真实场地的xy
                     x, y = StaticUART.xy_check(x, y)
-                    print(x, y)
+                    # print(x, y)
                     hexer = StaticUART.radar_map(target_id, x, y)
                     ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
+
                     for alarm in position_alarm[StaticUART.alarm_enemy]:
                         # 检查当前目标ID是否在报警相关数据中，并调用 is_inside() 函数判断机器人的位置是否在报警区域内
                         if target_id in alarm[0] and is_inside(np.array(alarm[1]),
@@ -267,7 +267,7 @@ class StaticUART:
                             data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
 
                             StaticUART.radar_between_car(data, datalenth=4,
-                                                          receiver_id=StaticUART.random_receiver(
+                                                          receiver_ID=StaticUART.random_receiver(
                                                               104 if home_test else True), ser=ser)
 
                     if ReadUART._Doubling_times > 0:
@@ -282,7 +282,6 @@ class StaticUART:
 
                 time.sleep(0.1)
         except:
-            # print(Static_UART.robot_location)
             time.sleep(0.1)
 
     @staticmethod
