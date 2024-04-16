@@ -28,7 +28,7 @@ class ReadUART(object):
     _byte2int = lambda x: x
 
     @staticmethod
-    def read(self, ser):
+    def read(ser):
 
         bufferCount = 0
         buffer = [0]
@@ -63,7 +63,7 @@ class ReadUART(object):
                 if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
 
                     # 雷达易伤机会
-                    self._Doubling_times = ((buffer[7] << 6) & 0b11000000)
+                    ReadUART._Doubling_times = ((buffer[7] << 6) & 0b11000000)
 
                     bufferCount = 0
                     if buffer[bufferCount] == 0xa5:
@@ -74,7 +74,7 @@ class ReadUART(object):
                 if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 15):
 
                     # 雷达标记进度
-                    self._progress = np.array([self._byte2int(buffer[i]) for i in range(7, 13)], dtype=int)
+                    ReadUART._progress = np.array([ReadUART._byte2int(buffer[i]) for i in range(7, 13)], dtype=int)
 
                     bufferCount = 0
                     if buffer[bufferCount] == 0xa5:
@@ -85,12 +85,12 @@ class ReadUART(object):
                 if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 20):
 
                     # 比赛阶段信息
-                    if self._Now_Stage < 2 and ((buffer[7] >> 4) == 2 or (buffer[7] >> 4) == 3 or (buffer[7] >> 4) == 4):
-                        self._Game_Start_Flag = True
-                    if self._Now_Stage < 5 and (buffer[7] >> 4) == 5:
-                        self._Game_End_Flag = True
-                    self._Now_Stage = buffer[7] >> 4
-                    self.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
+                    if ReadUART._Now_Stage < 2 and ((buffer[7] >> 4) == 2 or (buffer[7] >> 4) == 3 or (buffer[7] >> 4) == 4):
+                        ReadUART._Game_Start_Flag = True
+                    if ReadUART._Now_Stage < 5 and (buffer[7] >> 4) == 5:
+                        ReadUART._Game_End_Flag = True
+                    ReadUART._Now_Stage = buffer[7] >> 4
+                    ReadUART.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
 
                     bufferCount = 0
                     if buffer[bufferCount] == 0xa5:
@@ -101,7 +101,7 @@ class ReadUART(object):
                 if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 41):
 
                     # 各车血量
-                    self._HP = np.array([self._bytes2int((buffer[i * 2 - 1], buffer[i * 2])) for i in range(4, 20)], dtype=int)
+                    ReadUART._HP = np.array([ReadUART._bytes2int((buffer[i * 2 - 1], buffer[i * 2])) for i in range(4, 20)], dtype=int)
 
                     bufferCount = 0
                     if buffer[bufferCount] == 0xa5:
@@ -133,6 +133,7 @@ class StaticUART:
 
     car_data_id = 0x020F  # 车间通信的子内容ID
     lidar_data_id = 0x0121  # 雷达自主决策的子内容ID
+    auto_numbers = 0  # 翻倍已经使用次数
 
     receiver = receiver_id[enemy]
 
@@ -245,7 +246,7 @@ class StaticUART:
         return np.array([new_x, new_y])
 
     @staticmethod
-    def Robot_Data_Transmit_Map(ser):
+    def Robot_Data_Transmit_Map(self, ser):
         """
         通过串口传输位置信息，并且判断是否报警
         """
@@ -268,6 +269,17 @@ class StaticUART:
                             StaticUART.radar_between_car(data, datalenth=4,
                                                           receiver_id=StaticUART.random_receiver(
                                                               104 if home_test else True), ser=ser)
+
+                    if ReadUART._Doubling_times > 0:
+                        if StaticUART.auto_numbers == 0:
+                            data = 1
+                            StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
+                            StaticUART.auto_numbers = 1
+                        elif StaticUART.auto_numbers == 1:
+                            data = 2
+                            StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
+                            StaticUART.auto_numbers = 2
+
                 time.sleep(0.1)
         except:
             # print(Static_UART.robot_location)
