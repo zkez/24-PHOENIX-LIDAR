@@ -14,6 +14,103 @@ from macro import home_test, position_alarm, enemy, receiver_id
 from common.common import is_inside
 
 
+class ReadUART(object):
+
+    _progress = np.zeros(6, dtype=int)  # 初始化雷达标记进度
+    _Doubling_times = 0  # 翻倍机会次数
+    _HP = np.ones(16, dtype=int) * 500  # 初始化机器人血量
+    _Now_Stage = 0  # 当前比赛阶段
+    _Game_Start_Flag = False  # 比赛开始标志
+    _Game_End_Flag = False  # 比赛结束标志
+    remain_time = 0  # 剩余时间
+
+    _bytes2int = lambda x: (0x0000 | x[0]) | (x[1] << 8)
+    _byte2int = lambda x: x
+
+    @staticmethod
+    def read(self, ser):
+
+        bufferCount = 0
+        buffer = [0]
+        buffer *= 1000
+        cmdID = 0
+
+        while True:
+            s = ser.read(1)
+            s = int().from_bytes(s, 'big')
+
+            if bufferCount > 50:
+                bufferCount = 0
+
+            buffer[bufferCount] = s
+
+            if bufferCount == 0:
+                if buffer[bufferCount] != 0xa5:
+                    bufferCount = 0
+                    continue
+
+            if bufferCount == 5:
+                if offical_Judge_Handler.myVerify_CRC8_Check_Sum(id(buffer), 5) == 0:
+                    bufferCount = 0
+                    if buffer[bufferCount] == 0xa5:
+                        bufferCount = 1
+                    continue
+
+            if bufferCount == 7:
+                cmdID = (0x0000 | buffer[5]) | (buffer[6] << 8)
+
+            if bufferCount == 10 and cmdID == 0x020E:
+                if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 10):
+
+                    # 雷达易伤机会
+                    self._Doubling_times = ((buffer[7] << 6) & 0b11000000)
+
+                    bufferCount = 0
+                    if buffer[bufferCount] == 0xa5:
+                        bufferCount = 1
+                    continue
+
+            if bufferCount == 15 and cmdID == 0x020C:
+                if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 15):
+
+                    # 雷达标记进度
+                    self._progress = np.array([self._byte2int(buffer[i]) for i in range(7, 13)], dtype=int)
+
+                    bufferCount = 0
+                    if buffer[bufferCount] == 0xa5:
+                        bufferCount = 1
+                    continue
+
+            if bufferCount == 20 and cmdID == 0x0001:
+                if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 20):
+
+                    # 比赛阶段信息
+                    if self._Now_Stage < 2 and ((buffer[7] >> 4) == 2 or (buffer[7] >> 4) == 3 or (buffer[7] >> 4) == 4):
+                        self._Game_Start_Flag = True
+                    if self._Now_Stage < 5 and (buffer[7] >> 4) == 5:
+                        self._Game_End_Flag = True
+                    self._Now_Stage = buffer[7] >> 4
+                    self.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
+
+                    bufferCount = 0
+                    if buffer[bufferCount] == 0xa5:
+                        bufferCount = 1
+                    continue
+
+            if bufferCount == 41 and cmdID == 0x0003:
+                if offical_Judge_Handler.myVerify_CRC16_Check_Sum(id(buffer), 41):
+
+                    # 各车血量
+                    self._HP = np.array([self._bytes2int((buffer[i * 2 - 1], buffer[i * 2])) for i in range(4, 20)], dtype=int)
+
+                    bufferCount = 0
+                    if buffer[bufferCount] == 0xa5:
+                        bufferCount = 1
+                    continue
+
+            bufferCount += 1
+
+
 class StaticUART:
     if home_test:
         home_width = 9.3
@@ -30,8 +127,13 @@ class StaticUART:
     alarm_flag = 0
     alarm_location = None
     alarm_enemy = ['enemy_is_red', 'enemy_is_blue'][enemy]
+
     send_id = 9 if enemy else 109
-    data_id = 0x020F
+    receiver_id = 0x8080
+
+    car_data_id = 0x020F  # 车间通信的子内容ID
+    lidar_data_id = 0x0121  # 雷达自主决策的子内容ID
+
     receiver = receiver_id[enemy]
 
     @staticmethod
@@ -72,15 +174,29 @@ class StaticUART:
         """
         将指定的数据通过串口 ser 传输给雷达设备
         """
-        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指的是我要发的数据长度，前面还有6位的字节漂移
+        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))  # 将列表转换为字节流
-        dataid_sender_receiver = struct.pack('<3H', StaticUART.data_id, StaticUART.send_id, receiver_id)
+        dataid_sender_receiver = struct.pack('<3H', StaticUART.car_data_id, StaticUART.send_id, receiver_id)
         data_sum = SOF + CMDID + dataid_sender_receiver + data
         decodeData = binascii.b2a_hex(data_sum).decode('utf-8')  # 将 data_sum 转换为十六进制表示，并通过 decode('utf-8') 将其解码为字符串
         data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
         # data_last: 附加了 CRC-16 校验码后的完整数据
         # hexer: 附加了 CRC-16 校验码的完整数据的二进制表示
+        ser.write(hexer)
+
+    @staticmethod
+    def autonomous_lidar(data: int, datalenth: int, ser):
+        """
+        将指定的数据通过串口 ser 传输给雷达设备
+        """
+        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
+        CMDID = (b'\x01' b'\x03')
+        data = bytes(bytearray(data))
+        dataid_sender_receiver = struct.pack('<3H', StaticUART.lidar_data_id, StaticUART.send_id, StaticUART.receiver_id)
+        data_sum = SOF + CMDID + dataid_sender_receiver + data
+        decodeData = binascii.b2a_hex(data_sum).decode('utf-8')
+        data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
         ser.write(hexer)
 
     @staticmethod
@@ -131,7 +247,7 @@ class StaticUART:
     @staticmethod
     def Robot_Data_Transmit_Map(ser):
         """
-        通过串口传输位置信息，判断是否报警
+        通过串口传输位置信息，并且判断是否报警
         """
         try:
             for row in StaticUART.robot_location:
@@ -148,8 +264,7 @@ class StaticUART:
                         if target_id in alarm[0] and is_inside(np.array(alarm[1]),
                                                                StaticUART.alarm_xy_check(row[1:3])):
                             data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
-                            print(data)
-                            # print(Static_UART.random_receiver(False if home_test else True))
+
                             StaticUART.radar_between_car(data, datalenth=4,
                                                           receiver_id=StaticUART.random_receiver(
                                                               104 if home_test else True), ser=ser)
