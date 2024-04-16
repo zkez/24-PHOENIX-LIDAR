@@ -249,5 +249,3 @@ class Robomst_UART:
                 self.radar_map_test(target_id, x, y, ser)
                 time.sleep(0.1)
 
-
-
