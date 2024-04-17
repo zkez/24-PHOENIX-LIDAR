@@ -17,7 +17,7 @@ from common.common import is_inside
 class ReadUART(object):
     _progress = np.zeros(6, dtype=int)  # 初始化雷达标记进度
     _Doubling_times = 0  # 翻倍机会次数
-    _HP = np.ones(16, dtype=int) * 500  # 初始化机器人血量
+    _HP = np.ones(16, dtype=int) * 200  # 初始化机器人血量
     _Now_Stage = 0  # 当前比赛阶段
     _Game_Start_Flag = False  # 比赛开始标志
     _Game_End_Flag = False  # 比赛结束标志
@@ -26,9 +26,10 @@ class ReadUART(object):
     _bytes2int = lambda x: (0x0000 | x[0]) | (x[1] << 8)
     _byte2int = lambda x: x
 
+    flag = 0
+
     @staticmethod
     def read(ser):
-
         bufferCount = 0
         buffer = [0]
         buffer *= 1000
@@ -47,6 +48,8 @@ class ReadUART(object):
                 if buffer[bufferCount] != 0xa5:
                     bufferCount = 0
                     continue
+
+            ReadUART.flag = 1
 
             if bufferCount == 5:
                 if offical_Judge_Handler.myVerify_CRC8_Check_Sum(id(buffer), 5) == 0:
@@ -88,6 +91,7 @@ class ReadUART(object):
                         ReadUART._Game_Start_Flag = True
                     if ReadUART._Now_Stage < 5 and (buffer[7] >> 4) == 5:
                         ReadUART._Game_End_Flag = True
+
                     ReadUART._Now_Stage = buffer[7] >> 4
                     ReadUART.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
 
