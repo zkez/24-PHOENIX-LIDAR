@@ -15,8 +15,8 @@ if __name__ == '__main__':
     ra = Radar(K_0, C_0, E_0, imgsz=imgsz)
     Radar.start()
 
-    cv2.namedWindow("out",cv2.WINDOW_NORMAL)  # 显示雷达深度图
-    cv2.namedWindow("img",cv2.WINDOW_NORMAL)  # 显示实际图片
+    cv2.namedWindow("out", cv2.WINDOW_NORMAL)  # 显示雷达深度图
+    cv2.namedWindow("img", cv2.WINDOW_NORMAL)  # 显示实际图片
     cap = CameraThread(0)
     try:
         flag, frame = cap.read()

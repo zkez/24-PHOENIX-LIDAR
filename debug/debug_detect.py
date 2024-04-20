@@ -7,7 +7,7 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from macro import PLUGIN_LIBRARY, car_engine_file_path, armor_engine_file_path
-from detect.detect import YoLov8TRT, Detect
+from detect.detect import YoLov8TRT, Detect, DetectArmor, SortDetect
 from common.common import armor_filter
 from camera.camera import CameraThread
 
@@ -28,6 +28,8 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(video_path)
     try:
         detect = Detect()
+        armor = DetectArmor()
+        sort = SortDetect()
         while True:
             t1 = time.time()
             ret, frame = cap.read()
@@ -35,6 +37,8 @@ if __name__ == "__main__":
                 r, results, img = detect.run(YOLOv8_car, YOLOv8_armor, frame)
                 results = armor_filter(results)
                 print(results)
+                # car_locations, img = sort.Sort_infer(YOLOv8_car, YOLOv8_armor, frame)
+                # print(car_locations)
             else:
                 break
             cv2.namedWindow('frame', cv2.WINDOW_NORMAL)

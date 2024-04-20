@@ -1,6 +1,6 @@
 enemy: int = 1  # 0:red, 1:blue
 home_test = False
-debug = False
+debug = True
 
 CAMERA_CONFIG_DIR = 'Camera_config'
 CACHE_CONFIG_SAVE_DIR = 'save_stuff'
@@ -23,11 +23,13 @@ armor_engine_file_path = "../../tensorrtx/yolov8/build/yolov8s_armor.engine"
 CONF_THRESH_CAR = 0.5
 CONF_THRESH_ARMOR = 0.01
 IOU_THRESHOLD = 0.4
+ArmorFlag = False
 
 model_imgsz = (640, 640)
 map_size = [960, 536]
 
 position_choice = 'y'
+SaveFlag = False
 
 color2enemy = {"red": 0, "blue": 1}
 enemy2color = ['red', 'blue']

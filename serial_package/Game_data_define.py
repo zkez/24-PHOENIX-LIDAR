@@ -100,9 +100,11 @@ class graphic_data_struct:
 
 class robot_location():
     # the global variables for this class
-    loc = np.zeros((5,2),dtype=np.float32)
+    loc = np.zeros((5, 2), dtype=np.float32)
+
     def __init__(self):
         pass
+
     @staticmethod
     def push(location):
         robot_location.loc = np.float32(location)

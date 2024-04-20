@@ -45,16 +45,14 @@ class ReadUART(object):
             buffer[bufferCount] = s
 
             if bufferCount == 0:
-                if buffer[bufferCount] != 0xa5:
+                if buffer[bufferCount] != 0xA5:
                     bufferCount = 0
                     continue
-
-            ReadUART.flag = 1
 
             if bufferCount == 5:
                 if offical_Judge_Handler.myVerify_CRC8_Check_Sum(id(buffer), 5) == 0:
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xa5:
+                    if buffer[bufferCount] == 0xA5:
                         bufferCount = 1
                     continue
 
@@ -68,7 +66,7 @@ class ReadUART(object):
                     ReadUART._Doubling_times = ((buffer[7] << 6) & 0b11000000)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xa5:
+                    if buffer[bufferCount] == 0xA5:
                         bufferCount = 1
                     continue
 
@@ -79,7 +77,7 @@ class ReadUART(object):
                     ReadUART._progress = np.array([ReadUART._byte2int(buffer[i]) for i in range(7, 13)], dtype=int)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xa5:
+                    if buffer[bufferCount] == 0xA5:
                         bufferCount = 1
                     continue
 
@@ -96,7 +94,7 @@ class ReadUART(object):
                     ReadUART.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xa5:
+                    if buffer[bufferCount] == 0xA5:
                         bufferCount = 1
                     continue
 
@@ -107,7 +105,7 @@ class ReadUART(object):
                     ReadUART._HP = np.array([ReadUART._bytes2int((buffer[i * 2 - 1], buffer[i * 2])) for i in range(4, 20)], dtype=int)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xa5:
+                    if buffer[bufferCount] == 0xA5:
                         bufferCount = 1
                     continue
 
@@ -127,6 +125,7 @@ class StaticUART:
     _lock = threading.Lock()
     stop_flag = False
     robot_location = None
+
     alarm_flag = 0
     alarm_location = None
     alarm_enemy = ['enemy_is_red', 'enemy_is_blue'][enemy]
@@ -178,7 +177,7 @@ class StaticUART:
         """
         将指定的数据通过串口 ser 传输给雷达设备
         """
-        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
+        SOF = StaticUART.create_SOF(datalenth + 6)  # dataLength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))  # 将列表转换为字节流
         dataid_sender_receiver = struct.pack('<3H', StaticUART.car_data_id, StaticUART.send_id, receiver_ID)
@@ -194,7 +193,7 @@ class StaticUART:
         """
         将指定的数据通过串口 ser 传输给雷达设备
         """
-        SOF = StaticUART.create_SOF(datalenth + 6)  # datalength 指要发的数据长度，前面还有6位的字节漂移
+        SOF = StaticUART.create_SOF(datalenth + 6)  # dataLength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
         data = bytes(bytearray(data))
         dataid_sender_receiver = struct.pack('<3H', StaticUART.lidar_data_id, StaticUART.send_id, StaticUART.referee_system_receiver_id)

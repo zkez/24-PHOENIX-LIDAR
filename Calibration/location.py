@@ -80,15 +80,9 @@ def locate_pick(cap: CameraThread, enemy, camera_type, home_size=False, video_te
 
     # 设定世界坐标
     if enemy == 0:  # enemy is red
-        if camera_type == 0:  # right camera
-            ops = np.float64([red_base, blue_outpost, b_rt, b_lt])
-        else:  # left camera
-            ops = np.float64([red_outpost, red_base, b_rt, b_lt])
-    else:  # enemy is blue
-        if camera_type == 0:  # right camera
-            ops = np.float64([blue_base, red_outpost, r_rt, r_lt])
-        else:  # left camera
-            ops = np.float64([blue_outpost, blue_base, r_rt, r_lt])
+        ops = np.float64([red_base, blue_outpost, b_rt, b_lt])
+    else:
+        ops = np.float64([blue_base, red_outpost, r_rt, r_lt])
     ops = ops.reshape(4, 1, 3)
 
     r, frame = cap.read()
@@ -96,8 +90,8 @@ def locate_pick(cap: CameraThread, enemy, camera_type, home_size=False, video_te
         return False, None, None
 
     # 标定目标提示位置
-    tip_w = frame.shape[1]//2
-    tip_h = frame.shape[0]-200
+    tip_w = frame.shape[1] // 2
+    tip_h = frame.shape[0] - 200
 
     # OpenCV窗口参数
     info = {}
@@ -139,7 +133,6 @@ def locate_pick(cap: CameraThread, enemy, camera_type, home_size=False, video_te
             for select_p in pick_point:
                 cv2.circle(frame, (int(select_p[0]), int(select_p[1])), 1, (0, 255, 0), 2)
 
-            # draw the connecting line following the picking order
             for p_index in range(1, len(pick_point)):
                 cv2.line(frame, (int(pick_point[p_index - 1][0]), int(pick_point[p_index - 1][1])),
                          (int(pick_point[p_index][0]), int(pick_point[p_index][1])), (0, 255, 0), 2)

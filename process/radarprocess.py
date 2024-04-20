@@ -8,7 +8,7 @@ from lidar.Lidar import Radar
 from detect.prediction_handler import Bbox_Handler
 from Calibration.location_alarmer import LocationAlarmer
 from macro import MAP_PATH, enemy, home_test, map_size, img_sz\
-    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, ArmorFlag
+    , VIDEO_SAVE_DIR, debug, car_engine_file_path, armor_engine_file_path, ArmorFlag, SaveFlag
 from Calibration.location import locate_record, locate_pick
 from panel import Dashboard
 from debug import Debugger
@@ -33,7 +33,7 @@ class RadarProcess:
         save_order = self.increment_path(VIDEO_SAVE_DIR)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.vi_saver = cv2.VideoWriter(f'{VIDEO_SAVE_DIR}/{save_order}.mp4', fourcc, 6, imgsz)
-        self.resume_flag = 0
+        self.resume_flag = SaveFlag
 
         # 初始化处理边界框和地图的类
         self.bbox_handler = Bbox_Handler()

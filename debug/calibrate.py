@@ -119,7 +119,7 @@ def estimate_distance_with_manual_points(image, camera_matrix, dist_coeffs, know
     return distance_actual
 
 
-def main():
+def test():
     camera_matrix, dist_coeffs = read_camera_params_from_yaml('../Camera_config/camera0.yaml')
 
     known_width = 0.65
@@ -133,5 +133,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # calibrate_camera(8, 12, 20, max_images=800)
-    main()
+    calibrate_camera(8, 12, 20, max_images=800)

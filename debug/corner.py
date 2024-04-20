@@ -18,7 +18,7 @@ def onMouse(event, x, y, flags, param):
 
 
 def main():
-    image = cv2.imread("../save_stuff/photos/save_8.jpg")
+    image = cv2.imread("../save_stuff/photos/17.jpg")
     original_image = image.copy()
     corners = []
 

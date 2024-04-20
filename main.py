@@ -13,9 +13,10 @@ if __name__ == '__main__':
     try:
         ctypes.CDLL(PLUGIN_LIBRARY)
 
-        password = '123'
-        ch = pexpect.spawn('sudo chmod 777 /dev/ttyUSB0')
-        ch.sendline(password)
+        # TODO: 串口权限问题
+        # password = '608'
+        # ch = pexpect.spawn('sudo chmod 777 /dev/ttyUSB0')
+        # ch.sendline(password)
         ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=0.01)
 
         main_process = RadarProcess()
