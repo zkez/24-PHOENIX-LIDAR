@@ -15,18 +15,16 @@ from common.common import is_inside
 
 
 class ReadUART(object):
-    _progress = np.zeros(6, dtype=int)  # 初始化雷达标记进度
-    _Doubling_times = 0  # 翻倍机会次数
-    _HP = np.ones(16, dtype=int) * 200  # 初始化机器人血量
-    _Now_Stage = 0  # 当前比赛阶段
+    _progress = np.ones(6, dtype=int) * -1  # 初始化雷达标记进度
+    _Doubling_times = -1  # 翻倍机会次数
+    _HP = np.ones(16, dtype=int) * -1  # 初始化机器人血量
+    _Now_Stage = -1  # 当前比赛阶段
     _Game_Start_Flag = False  # 比赛开始标志
     _Game_End_Flag = False  # 比赛结束标志
-    remain_time = 0  # 剩余时间
+    Remain_time = -1  # 剩余时间
 
     _bytes2int = lambda x: (0x0000 | x[0]) | (x[1] << 8)
     _byte2int = lambda x: x
-
-    flag = 0
 
     @staticmethod
     def read(ser):
@@ -45,14 +43,14 @@ class ReadUART(object):
             buffer[bufferCount] = s
 
             if bufferCount == 0:
-                if buffer[bufferCount] != 0xA5:
+                if buffer[bufferCount] != 0xa5:
                     bufferCount = 0
                     continue
 
             if bufferCount == 5:
                 if offical_Judge_Handler.myVerify_CRC8_Check_Sum(id(buffer), 5) == 0:
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xA5:
+                    if buffer[bufferCount] == 0xa5:
                         bufferCount = 1
                     continue
 
@@ -66,7 +64,7 @@ class ReadUART(object):
                     ReadUART._Doubling_times = ((buffer[7] << 6) & 0b11000000)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xA5:
+                    if buffer[bufferCount] == 0xa5:
                         bufferCount = 1
                     continue
 
@@ -77,7 +75,7 @@ class ReadUART(object):
                     ReadUART._progress = np.array([ReadUART._byte2int(buffer[i]) for i in range(7, 13)], dtype=int)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xA5:
+                    if buffer[bufferCount] == 0xa5:
                         bufferCount = 1
                     continue
 
@@ -91,10 +89,10 @@ class ReadUART(object):
                         ReadUART._Game_End_Flag = True
 
                     ReadUART._Now_Stage = buffer[7] >> 4
-                    ReadUART.Remain_time = (0x0000 | buffer[8]) | (buffer[9] << 8)
+                    ReadUART.Remain_time = ReadUART._bytes2int((buffer[8], buffer[9]))
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xA5:
+                    if buffer[bufferCount] == 0xa5:
                         bufferCount = 1
                     continue
 
@@ -105,7 +103,7 @@ class ReadUART(object):
                     ReadUART._HP = np.array([ReadUART._bytes2int((buffer[i * 2 - 1], buffer[i * 2])) for i in range(4, 20)], dtype=int)
 
                     bufferCount = 0
-                    if buffer[bufferCount] == 0xA5:
+                    if buffer[bufferCount] == 0xa5:
                         bufferCount = 1
                     continue
 
@@ -253,37 +251,38 @@ class StaticUART:
         通过串口传输位置信息，并且判断是否报警
         """
         try:
-            for row in StaticUART.robot_location:
-                target_id = int(row[0])
-                if target_id in StaticUART.specific_color[enemy]:
-                    x, y = float(row[1]), float(row[2])
-                    # check_xy 之后获得真实场地的xy
-                    x, y = StaticUART.xy_check(x, y)
-                    # print(x, y)
-                    hexer = StaticUART.radar_map(target_id, x, y)
-                    ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
+            while 1:
+                for row in StaticUART.robot_location:
+                    target_id = int(row[0])
+                    if target_id in StaticUART.specific_color[enemy]:
+                        x, y = float(row[1]), float(row[2])
+                        # check_xy 之后获得真实场地的xy
+                        x, y = StaticUART.xy_check(x, y)
+                        # print(x, y)
+                        hexer = StaticUART.radar_map(target_id, x, y)
+                        ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
 
-                    for alarm in position_alarm[StaticUART.alarm_enemy]:
-                        # 检查当前目标ID是否在报警相关数据中，并调用 is_inside() 函数判断机器人的位置是否在报警区域内
-                        if target_id in alarm[0] and is_inside(np.array(alarm[1]),
-                                                               StaticUART.alarm_xy_check(row[1:3])):
-                            data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
+                        for alarm in position_alarm[StaticUART.alarm_enemy]:
+                            # 检查当前目标ID是否在报警相关数据中，并调用 is_inside() 函数判断机器人的位置是否在报警区域内
+                            if target_id in alarm[0] and is_inside(np.array(alarm[1]),
+                                                                   StaticUART.alarm_xy_check(row[1:3])):
+                                data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
 
-                            StaticUART.radar_between_car(data, datalenth=4,
-                                                          receiver_ID=StaticUART.random_receiver(
-                                                              104 if home_test else True), ser=ser)
+                                StaticUART.radar_between_car(data, datalenth=4,
+                                                              receiver_ID=StaticUART.random_receiver(
+                                                                  104 if home_test else True), ser=ser)
 
-                    if ReadUART._Doubling_times > 0:
-                        if StaticUART.auto_numbers == 0:
-                            data = 1
-                            StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
-                            StaticUART.auto_numbers = 1
-                        elif StaticUART.auto_numbers == 1:
-                            data = 2
-                            StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
-                            StaticUART.auto_numbers = 2
+                        if ReadUART._Doubling_times > 0:
+                            if StaticUART.auto_numbers == 0 and np.sum(ReadUART._progress >= 100) >= 2:
+                                data = 1
+                                StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
+                                StaticUART.auto_numbers = 1
+                            elif StaticUART.auto_numbers == 1 and np.sum(ReadUART._progress >= 100) >= 2:
+                                data = 2
+                                StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
+                                StaticUART.auto_numbers = 2
 
-                time.sleep(0.1)
+                    time.sleep(0.1)
         except:
             time.sleep(0.1)
 

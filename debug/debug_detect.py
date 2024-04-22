@@ -24,7 +24,7 @@ if __name__ == "__main__":
         armor_batch_image_raw, use_time_armor, *a_armor = YOLOv8_armor.infer(YOLOv8_armor.get_raw_image_zeros(), flag='armor')
 
     # cap = CameraThread(0)
-    video_path = "../save_stuff/20.mp4"
+    video_path = "../save_stuff/15.mp4"
     cap = cv2.VideoCapture(video_path)
     try:
         detect = Detect()
