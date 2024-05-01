@@ -9,6 +9,7 @@ import numpy as np
 import copy
 import threading
 import random
+from datetime import datetime
 
 from macro import home_test, position_alarm, enemy, receiver_id
 from common.common import is_inside
@@ -22,6 +23,7 @@ class ReadUART(object):
     _Game_Start_Flag = False  # 比赛开始标志
     _Game_End_Flag = False  # 比赛结束标志
     Remain_time = -1  # 剩余时间
+    record_flag = False  # 计时标志
 
     _bytes2int = lambda x: (0x0000 | x[0]) | (x[1] << 8)
     _byte2int = lambda x: x
@@ -133,7 +135,8 @@ class StaticUART:
 
     car_data_id = 0x020F  # 车间通信的子内容ID
     lidar_data_id = 0x0121  # 雷达自主决策的子内容ID
-    auto_numbers = 0  # 翻倍已经使用次数
+    auto_data = 0  # 发布数据（累加）
+    auto_numbers = 0  # 使用次数
 
     receiver = receiver_id[enemy]
 
@@ -248,7 +251,7 @@ class StaticUART:
     @staticmethod
     def Robot_Data_Transmit_Map(ser):
         """
-        通过串口传输位置信息，并且判断是否报警
+        通过串口传输位置信息，并且判断是否报警以及进行自主决策
         """
         try:
             while 1:
@@ -256,14 +259,12 @@ class StaticUART:
                     target_id = int(row[0])
                     if target_id in StaticUART.specific_color[enemy]:
                         x, y = float(row[1]), float(row[2])
-                        # check_xy 之后获得真实场地的xy
                         x, y = StaticUART.xy_check(x, y)
-                        # print(x, y)
                         hexer = StaticUART.radar_map(target_id, x, y)
                         ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
 
                         for alarm in position_alarm[StaticUART.alarm_enemy]:
-                            # 检查当前目标ID是否在报警相关数据中，并调用 is_inside() 函数判断机器人的位置是否在报警区域内
+                            # 检查当前目标ID是否在报警相关数据中
                             if target_id in alarm[0] and is_inside(np.array(alarm[1]),
                                                                    StaticUART.alarm_xy_check(row[1:3])):
                                 data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
@@ -272,15 +273,22 @@ class StaticUART:
                                                               receiver_ID=StaticUART.random_receiver(
                                                                   104 if home_test else True), ser=ser)
 
+                        if ReadUART._Now_Stage in [2, 3, 4] and ReadUART.record_flag is False:
+                            start_time = datetime.now()
+                            ReadUART.record_flag = True
+                        else:
+                            start_time = None
+
                         if ReadUART._Doubling_times > 0:
-                            if StaticUART.auto_numbers == 0 and np.sum(ReadUART._progress >= 100) >= 2:
-                                data = 1
-                                StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
-                                StaticUART.auto_numbers = 1
-                            elif StaticUART.auto_numbers == 1 and np.sum(ReadUART._progress >= 100) >= 2:
-                                data = 2
-                                StaticUART.autonomous_lidar(data, datalenth=1, ser=ser)
-                                StaticUART.auto_numbers = 2
+                            if start_time is not None:
+                                if int((datetime.now() - start_time).total_seconds()) > 200 and StaticUART.auto_numbers == 0:
+                                    StaticUART.auto_data += 1
+                                    StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
+                                    StaticUART.auto_numbers = 1
+                                elif int((datetime.now() - start_time).total_seconds()) > 320 and StaticUART.auto_numbers == 1:
+                                    StaticUART.auto_data += 1
+                                    StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
+                                    StaticUART.auto_numbers = 2
 
                     time.sleep(0.1)
         except:
