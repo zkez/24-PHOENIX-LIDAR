@@ -82,11 +82,23 @@ class DepthQueue(object):
         # 采用以中心点为基准点扩大一倍的装甲板框，并设置ROI上界和下界，防止其超出像素平面范围
         area = self.depth[int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
                int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
+
+        # 正常装甲板区域
         # area = self.depth[int(r[1]):int(r[3]), int(r[0]):int(r[2])]
 
-        z = np.nanmean(area) if not np.isnan(area).all() else np.nan  # 当对应ROI全为nan，则直接返回为nan
+        # 分别创建宽度和高度扩大一倍的两个 ROI 区域
+        area_width_expanded = self.depth[int(r[1]):int(r[3]),
+                              int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
+        area_height_expanded = self.depth[
+                               int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
+                               int(r[0]):int(r[2])]
 
-        return np.concatenate([cv2.undistortPoints(center, self.K_0, self.C_0).reshape(-1), np.array([z])], axis=0)
+        all_z = np.nanmean(area) if not np.isnan(area).all() else np.nan  # 当对应ROI全为nan，则直接返回为nan
+        # 进行加权平均，宽度占0.7，高度占0.3
+        two_z = ((0.7 * np.nanmean(area_width_expanded) if not np.isnan(area_width_expanded).all() else np.nan)
+                 + (0.3 * np.nanmean(area_height_expanded) if not np.isnan(area_height_expanded).all() else np.nan))
+
+        return np.concatenate([cv2.undistortPoints(center, self.K_0, self.C_0).reshape(-1), np.array([two_z])], axis=0)
 
     def detect_depth(self, rects):
         """
