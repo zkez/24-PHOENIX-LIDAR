@@ -17,6 +17,7 @@ from common.common import is_inside
 
 class ReadUART(object):
     _progress = np.ones(6, dtype=int) * -1  # 初始化雷达标记进度
+    sb_location = [1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0]  # 位置记录提供给哨兵决策
     _Doubling_times = -1  # 翻倍机会次数
     _HP = np.ones(16, dtype=int) * -1  # 初始化机器人血量
     _Now_Stage = -1  # 当前比赛阶段
@@ -114,8 +115,8 @@ class ReadUART(object):
 
 class StaticUART:
     if home_test:
-        home_width = 9.3
-        home_height = 4.65
+        home_width = 28
+        home_height = 15
     else:
         home_width = 28
         home_height = 15
@@ -131,6 +132,7 @@ class StaticUART:
     alarm_enemy = ['enemy_is_red', 'enemy_is_blue'][enemy]
 
     send_id = 9 if enemy else 109
+    sb_id = 7 if enemy else 107
     referee_system_receiver_id = 0x8080
 
     car_data_id = 0x020F  # 车间通信的子内容ID
@@ -263,34 +265,36 @@ class StaticUART:
                         hexer = StaticUART.radar_map(target_id, x, y)
                         ser.write(hexer)  # 将生成的数据 hexer（包含id,坐标）通过串口 ser 进行传输
 
-                        for alarm in position_alarm[StaticUART.alarm_enemy]:
-                            # 检查当前目标ID是否在报警相关数据中
-                            if target_id in alarm[0] and is_inside(np.array(alarm[1]),
-                                                                   StaticUART.alarm_xy_check(row[1:3])):
-                                data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
+                        ReadUART.sb_location[StaticUART.handle_id(target_id) * 3 - 2] = x
+                        ReadUART.sb_location[StaticUART.handle_id(target_id) * 3 - 1] = y
 
-                                StaticUART.radar_between_car(data, datalenth=4,
-                                                              receiver_ID=StaticUART.random_receiver(
-                                                                  104 if home_test else True), ser=ser)
-
-                        if ReadUART._Now_Stage in [2, 3, 4] and ReadUART.record_flag is False:
-                            start_time = datetime.now()
-                            ReadUART.record_flag = True
-                        else:
-                            start_time = None
-
-                        if ReadUART._Doubling_times > 0:
-                            if start_time is not None:
-                                if int((datetime.now() - start_time).total_seconds()) > 200 and StaticUART.auto_numbers == 0:
-                                    StaticUART.auto_data += 1
-                                    StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
-                                    StaticUART.auto_numbers = 1
-                                elif int((datetime.now() - start_time).total_seconds()) > 320 and StaticUART.auto_numbers == 1:
-                                    StaticUART.auto_data += 1
-                                    StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
-                                    StaticUART.auto_numbers = 2
-
+                        # for alarm in position_alarm[StaticUART.alarm_enemy]:
+                        #     # 检查当前目标ID是否在报警相关数据中
+                        #     if target_id in alarm[0] and is_inside(np.array(alarm[1]),
+                        #                                            StaticUART.alarm_xy_check(row[1:3])):
+                        #         data = StaticUART.handle_id(target_id) + StaticUART.handle_id(alarm[-1])
+                        #
+                        #         StaticUART.radar_between_car(data, datalenth=4,
+                        #                                       receiver_ID=StaticUART.random_receiver(
+                        #                                           104 if home_test else True), ser=ser)
                     time.sleep(0.1)
+
+                    if ReadUART._Now_Stage in [2, 3, 4] and ReadUART.record_flag is False:
+                        start_time = datetime.now()
+                        ReadUART.record_flag = True
+                    else:
+                        start_time = None
+
+                    if ReadUART._Doubling_times > 0:
+                        if start_time is not None:
+                            if int((datetime.now() - start_time).total_seconds()) > 200 and StaticUART.auto_numbers == 0:
+                                StaticUART.auto_data += 1
+                                StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
+                                StaticUART.auto_numbers = 1
+                            elif int((datetime.now() - start_time).total_seconds()) > 320 and StaticUART.auto_numbers == 1:
+                                StaticUART.auto_data += 1
+                                StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
+                                StaticUART.auto_numbers = 2
         except:
             time.sleep(0.1)
 
@@ -298,16 +302,16 @@ class StaticUART:
     def handle_id(target_id):
         if target_id > 100:
             target_id -= 100
-        if target_id == 1:
-            target_id = [1, 0]
-        if target_id == 2:
-            target_id = [2, 0]
-        if target_id == 3:
-            target_id = [2, 1]
-        if target_id == 4:
-            target_id = [2, 2]
-        if target_id == 5:
-            target_id = [3, 2]
+        # if target_id == 1:
+        #     target_id = [1, 0]
+        # if target_id == 2:
+        #     target_id = [2, 0]
+        # if target_id == 3:
+        #     target_id = [2, 1]
+        # if target_id == 4:
+        #     target_id = [2, 2]
+        # if target_id == 5:
+        #     target_id = [3, 2]
 
         return target_id
 
@@ -317,3 +321,31 @@ class StaticUART:
             StaticUART.Robot_Data_Transmit_Map(ser)
             if StaticUART.stop_flag:
                 break
+
+    @staticmethod
+    def sb_communicate(ser):
+        """
+        将场上车辆坐标按顺序发送给哨兵
+        """
+        try:
+            while 1:
+                data = ReadUART.sb_location
+                StaticUART.radar_between_car(data, datalenth=15, receiver_ID=StaticUART.sb_id, ser=ser)
+                time.sleep(0.035)
+        except:
+            time.sleep(0.1)
+
+    @staticmethod
+    def test_communicate(ser):
+        """
+        测试串口通信
+        """
+        try:
+            while 1:
+                x = 10
+                y = 10
+                hexer = StaticUART.radar_map(104, x, y)
+                ser.write(hexer)
+                time.sleep(0.1)
+        except:
+            time.sleep(0.1)
