@@ -417,12 +417,13 @@ class Detect(object):
 class DetectArmor(object):
     def armor_infer(self, armorNet, frame):
         array_locations = self.crop_frame_infer(armorNet, frame)
-        for i in range(len(array_locations)):
-            cv2.rectangle(frame, (int(array_locations[i][10]), int(array_locations[i][11])),
-                          (int(array_locations[i][12]), int(array_locations[i][13])), (0, 255, 0), 2)
-            cv2.putText(frame, "{}".format(categories[int(array_locations[i][9])]),
-                        (int(array_locations[i][10]), int(array_locations[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                        (0, 255, 0), 2)
+        if array_locations is not None:
+            for i in range(len(array_locations)):
+                cv2.rectangle(frame, (int(array_locations[i][10]), int(array_locations[i][11])),
+                              (int(array_locations[i][12]), int(array_locations[i][13])), (0, 255, 0), 2)
+                cv2.putText(frame, "{}".format(categories[int(array_locations[i][9])]),
+                            (int(array_locations[i][10]), int(array_locations[i][11])), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (0, 255, 0), 2)
 
         if array_locations is not None:
             return True, array_locations.reshape(-1, 14), frame
@@ -447,8 +448,10 @@ class DetectArmor(object):
                 if len(armor_boxes) > 0:
                     armor_post_process(armor_location, [x1, y1, x2, y2])
                     locations.append(armor_location)
-
-        array_locations = np.concatenate(locations, axis=0)
+        if locations != []:
+            array_locations = np.concatenate(locations, axis=0)
+        else:
+            array_locations = None
         return array_locations
 
 
