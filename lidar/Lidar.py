@@ -86,7 +86,7 @@ class DepthQueue(object):
         # 正常装甲板区域
         # area = self.depth[int(r[1]):int(r[3]), int(r[0]):int(r[2])]
 
-        # 分别创建宽度和高度扩大一倍的两个 ROI 区域, 并设置ROI上界和下界，防止其超出像素平面范围
+        # 分别创建宽度和高度扩大一倍的两个ROI区域, 并设置ROI上界和下界，防止其超出像素平面范围
         area_width_expanded = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
                               int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
         area_height_expanded = self.depth[int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
