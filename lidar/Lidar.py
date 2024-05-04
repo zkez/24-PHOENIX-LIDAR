@@ -80,24 +80,36 @@ class DepthQueue(object):
         width = r[2] - r[0]
         height = r[3] - r[1]
         # 采用以中心点为基准点扩大一倍的装甲板框，并设置ROI上界和下界，防止其超出像素平面范围
-        area = self.depth[int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
-               int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
+        # area = self.depth[int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
+        #        int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
+        # all_z = np.nanmean(area) if not np.isnan(area).all() else np.nan  # 当对应ROI全为nan，则直接返回为nan
 
         # 正常装甲板区域
-        # area = self.depth[int(r[1]):int(r[3]), int(r[0]):int(r[2])]
-
-        # 分别创建宽度和高度扩大一倍的两个ROI区域, 并设置ROI上界和下界，防止其超出像素平面范围
-        area_width_expanded = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
-                              int(max(center[0] - width, 0)):int(min(center[0] + width, self.size[0] - 1))]
-        area_height_expanded = self.depth[int(max(0, center[1] - height)):int(min(center[1] + height, self.size[1] - 1)),
+        area_normal = self.depth[int(r[1]):int(r[3]), int(r[0]):int(r[2])]
+        # 装甲板区域:left, right, top
+        area_width_left = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
+                              int(max(center[0] - width, 0)):int(min(r[0], self.size[0] - 1))]
+        area_width_right = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
+                              int(max(r[2], 0)):int(min(center[0] + width, self.size[0] - 1))]
+        area_height_top = self.depth[int(max(0, r[1])):int(min(center[1] + height, self.size[1] - 1)),
                                int(max(r[0], 0)):int(min(r[2], self.size[0] - 1))]
 
-        all_z = np.nanmean(area) if not np.isnan(area).all() else np.nan  # 当对应ROI全为nan，则直接返回为nan
-        # 进行加权平均，宽度占0.7，高度占0.3
-        two_z = ((0.7 * np.nanmean(area_width_expanded) if not np.isnan(area_width_expanded).all() else np.nan)
-                 + (0.3 * np.nanmean(area_height_expanded) if not np.isnan(area_height_expanded).all() else np.nan))
+        # 判断：一般左右最多有一个被遮挡，上方一般不会被遮挡只有镂空情况
+        z = np.nanmean(area_normal) if not np.isnan(area_normal).all() else np.nan
+        left_z = np.nanmean(area_width_left) if not np.isnan(area_width_left).all() else np.nan
+        right_z = np.nanmean(area_width_right) if not np.isnan(area_width_right).all() else np.nan
+        top_z = np.nanmean(area_height_top) if not np.isnan(area_height_top).all() else np.nan
 
-        return np.concatenate([cv2.undistortPoints(center, self.K_0, self.C_0).reshape(-1), np.array([two_z])], axis=0)
+        if left_z - z < 0.2 and right_z - z < 0.2:
+            handle_z = 0.6 * z + 0.3 * (left_z + right_z) / 2 + 0.1 * top_z
+        elif left_z - z < 0.2:
+            handle_z = 0.6 * z + 0.25 * left_z + 0.15 * top_z
+        elif right_z - z < 0.2:
+            handle_z = 0.6 * z + 0.25 * right_z + 0.15 * top_z
+        else:
+            handle_z = 0.8 * z + 0.2 * top_z
+
+        return np.concatenate([cv2.undistortPoints(center, self.K_0, self.C_0).reshape(-1), np.array([handle_z])], axis=0)
 
     def detect_depth(self, rects):
         """
