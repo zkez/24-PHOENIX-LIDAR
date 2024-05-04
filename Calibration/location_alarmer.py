@@ -21,6 +21,7 @@ class LocationAlarmer:
             self._camera_position = [None, None]
             self._T = [None, None]
         else:
+            self._z_cache = [None]
             self._camera_position = [None]
             self._T = [None]
         self._z_a = z_a
