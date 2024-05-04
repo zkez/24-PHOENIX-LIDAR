@@ -91,7 +91,7 @@ class DepthQueue(object):
                               int(max(center[0] - width, 0)):int(min(r[0], self.size[0] - 1))]
         area_width_right = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
                               int(max(r[2], 0)):int(min(center[0] + width, self.size[0] - 1))]
-        area_height_top = self.depth[int(max(0, r[1])):int(min(center[1] + height, self.size[1] - 1)),
+        area_height_top = self.depth[int(max(0, r[1])):int(min(center[1] + 1.5 * height, self.size[1] - 1)),
                                int(max(r[0], 0)):int(min(r[2], self.size[0] - 1))]
 
         # 判断：一般左右最多有一个被遮挡，上方一般不会被遮挡只有镂空情况
@@ -100,14 +100,14 @@ class DepthQueue(object):
         right_z = np.nanmean(area_width_right) if not np.isnan(area_width_right).all() else np.nan
         top_z = np.nanmean(area_height_top) if not np.isnan(area_height_top).all() else np.nan
 
-        if left_z - z < 0.2 and right_z - z < 0.2:
+        if abs(left_z - z) < 0.2 and abs(right_z - z) < 0.2 and abs(top_z - z) < 0.2:
             handle_z = 0.6 * z + 0.3 * (left_z + right_z) / 2 + 0.1 * top_z
-        elif left_z - z < 0.2:
+        elif abs(left_z - z) - z < 0.2 and abs(top_z - z) < 0.2:
             handle_z = 0.6 * z + 0.25 * left_z + 0.15 * top_z
-        elif right_z - z < 0.2:
+        elif abs(right_z - z) < 0.2 and abs(top_z - z) < 0.2:
             handle_z = 0.6 * z + 0.25 * right_z + 0.15 * top_z
         else:
-            handle_z = 0.8 * z + 0.2 * top_z
+            handle_z = z
 
         return np.concatenate([cv2.undistortPoints(center, self.K_0, self.C_0).reshape(-1), np.array([handle_z])], axis=0)
 
