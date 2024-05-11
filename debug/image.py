@@ -25,8 +25,8 @@ def resize_image(input_path, output_path, max_size):
         resized_img.save(output_path)
 
 
-input_image_path = "./save_stuff/map.jpg"
-output_image_path = "./save_stuff/output_map.jpg"
+input_image_path = "../save_stuff/map.jpg"
+output_image_path = "../save_stuff/output_map.jpg"
 max_size = 960
 
 resize_image(input_image_path, output_image_path, max_size)
