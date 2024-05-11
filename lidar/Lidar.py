@@ -91,7 +91,7 @@ class DepthQueue(object):
                               int(max(center[0] - width, 0)):int(min(r[0], self.size[0] - 1))]
         area_width_right = self.depth[int(max(0, r[1])):int(min(r[3], self.size[1] - 1)),
                               int(max(r[2], 0)):int(min(center[0] + width, self.size[0] - 1))]
-        area_height_top = self.depth[int(max(0, r[1])):int(min(center[1] + 1.5 * height, self.size[1] - 1)),
+        area_height_top = self.depth[int(max(0, r[1])):int(min(center[1] + height, self.size[1] - 1)),
                                int(max(r[0], 0)):int(min(r[2], self.size[0] - 1))]
 
         # 判断：一般左右最多有一个被遮挡，上方一般不会被遮挡只有镂空情况
@@ -103,9 +103,9 @@ class DepthQueue(object):
         if abs(left_z - z) < 0.2 and abs(right_z - z) < 0.2 and abs(top_z - z) < 0.2:
             handle_z = 0.6 * z + 0.3 * (left_z + right_z) / 2 + 0.1 * top_z
         elif abs(left_z - z) - z < 0.2 and abs(top_z - z) < 0.2:
-            handle_z = 0.6 * z + 0.25 * left_z + 0.15 * top_z
+            handle_z = 0.6 * z + 0.3 * left_z + 0.1 * top_z
         elif abs(right_z - z) < 0.2 and abs(top_z - z) < 0.2:
-            handle_z = 0.6 * z + 0.25 * right_z + 0.15 * top_z
+            handle_z = 0.6 * z + 0.3 * right_z + 0.1 * top_z
         else:
             handle_z = z
 
@@ -191,6 +191,7 @@ class Radar(object):
             dist = np.linalg.norm(pc, axis=1)
 
             pc = pc[dist > 0.4]  # 雷达近距离滤除
+
             # do record
             if Radar.__record_times > 0:
                 Radar.__record_list.append(pc)
