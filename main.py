@@ -28,10 +28,8 @@ if __name__ == '__main__':
 
         # 裁判系统通信线程
         uart_thread = threading.Thread(target=StaticUART.advanced_loop, args=(ser, ), name='uart')
-        sb_thread = threading.Thread(target=StaticUART.sb_communicate, args=(ser, ), name='sb')
         read_thread = threading.Thread(target=ReadUART.read, args=(ser, ), name='read')
         uart_thread.start()
-        sb_thread.start()
         read_thread.start()
 
         choice = position_choice if isinstance(position_choice, str) else input(
