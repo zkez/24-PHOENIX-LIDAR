@@ -17,7 +17,7 @@ from common.common import is_inside
 
 class ReadUART(object):
     _progress = np.ones(6, dtype=int) * -1  # 初始化雷达标记进度
-    sb_location = [1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0]  # 位置记录提供给哨兵决策
+    sb_location = [1, 0., 0., 2, 0., 0., 3, 0., 0., 4, 0., 0., 5, 0., 0., 7, 0., 0.]  # 位置记录提供给哨兵决策
     _Doubling_times = -1  # 翻倍机会次数
     _HP = np.ones(16, dtype=int) * -1  # 初始化机器人血量
     _Now_Stage = -1  # 当前比赛阶段
@@ -162,10 +162,10 @@ class StaticUART:
         """
         将传入的位置信息 location 深复制到类变量 Static_UART.robot_location 中
         """
-        StaticUART._lock.acquire()
+        # StaticUART._lock.acquire()
         # 如果不适用深复制（或许浅复制也行），那么多进程时可能反而会更慢
         StaticUART.robot_location = copy.deepcopy(location)
-        StaticUART._lock.release()
+        # StaticUART._lock.release()
 
     @staticmethod
     def push_alarm(location):
@@ -179,6 +179,7 @@ class StaticUART:
     def radar_between_car(data: list, datalenth: int, receiver_ID, ser):
         """
         将指定的数据通过串口 ser 传输给雷达设备
+        :param data:只能传输int类型的数据
         """
         SOF = StaticUART.create_SOF(datalenth + 6)  # dataLength 指要发的数据长度，前面还有6位的字节漂移
         CMDID = (b'\x01' b'\x03')
@@ -203,6 +204,17 @@ class StaticUART:
         data_sum = SOF + CMDID + dataid_sender_receiver + data
         decodeData = binascii.b2a_hex(data_sum).decode('utf-8')
         data_last, hexer = offical_Judge_Handler.crc16Add(decodeData)
+        ser.write(hexer)
+
+    @staticmethod
+    def auto_lidar(data, ser):
+        SOF = StaticUART.create_SOF(7)
+        CMDID = (b'\x01' b'\x03')
+        data = struct.pack("<4H", StaticUART.lidar_data_id,
+                           StaticUART.send_id, StaticUART.referee_system_receiver_id, data)
+        data3 = SOF + CMDID + data
+        decodeData = binascii.b2a_hex(data3).decode('utf-8')  # 转换为16进制表示，又将其解码成字符串
+        _, hexer = offical_Judge_Handler.crc16Add(decodeData)
         ser.write(hexer)
 
     @staticmethod
@@ -251,7 +263,7 @@ class StaticUART:
         return np.array([new_x, new_y])
 
     @staticmethod
-    def Robot_Data_Transmit_Map(ser):
+    def robot_data_transmit_map(ser):
         """
         通过串口传输位置信息，并且判断是否报警以及进行自主决策
         """
@@ -277,7 +289,7 @@ class StaticUART:
                         #         StaticUART.radar_between_car(data, datalenth=4,
                         #                                       receiver_ID=StaticUART.random_receiver(
                         #                                           104 if home_test else True), ser=ser)
-                    time.sleep(0.1)
+                        time.sleep(0.09)
 
                     if ReadUART._Now_Stage in [2, 3, 4] and ReadUART.record_flag is False:
                         start_time = datetime.now()
@@ -285,16 +297,26 @@ class StaticUART:
                     else:
                         start_time = None
 
+                    StaticUART.sb_communicate(ser)
+
                     if ReadUART._Doubling_times > 0:
                         if start_time is not None:
                             if int((datetime.now() - start_time).total_seconds()) > 200 and StaticUART.auto_numbers == 0:
                                 StaticUART.auto_data += 1
-                                StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
-                                StaticUART.auto_numbers = 1
+                                StaticUART.auto_lidar(StaticUART.auto_data, ser=ser)
+                                StaticUART.auto_numbers += 1
+                                time.sleep(0.03)
                             elif int((datetime.now() - start_time).total_seconds()) > 320 and StaticUART.auto_numbers == 1:
                                 StaticUART.auto_data += 1
-                                StaticUART.autonomous_lidar(StaticUART.auto_data, datalenth=1, ser=ser)
-                                StaticUART.auto_numbers = 2
+                                StaticUART.auto_lidar(StaticUART.auto_data, ser=ser)
+                                StaticUART.auto_numbers += 1
+                                time.sleep(0.03)
+                        elif np.sum(ReadUART._progress > 100) >= 3:
+                            StaticUART.auto_data += 1
+                            StaticUART.auto_lidar(StaticUART.auto_data, ser=ser)
+                            StaticUART.auto_numbers += 1
+                            time.sleep(0.03)
+
         except:
             time.sleep(0.1)
 
@@ -318,7 +340,7 @@ class StaticUART:
     @staticmethod
     def advanced_loop(ser):
         while 1:
-            StaticUART.Robot_Data_Transmit_Map(ser)
+            StaticUART.robot_data_transmit_map(ser)
             if StaticUART.stop_flag:
                 break
 
@@ -327,13 +349,17 @@ class StaticUART:
         """
         将场上车辆坐标按顺序发送给哨兵
         """
-        try:
-            while 1:
-                data = ReadUART.sb_location
-                StaticUART.radar_between_car(data, datalenth=15, receiver_ID=StaticUART.sb_id, ser=ser)
-                time.sleep(0.035)
-        except:
-            time.sleep(0.1)
+        SOF = StaticUART.create_SOF(48 + 6)
+        CMDID = (b'\x01' b'\x03')
+        indices = [1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17]
+        data = struct.pack("<3H12f", StaticUART.car_data_id,
+                           StaticUART.send_id, StaticUART.sb_id,
+                           *tuple(ReadUART.sb_location[i] for i in indices))
+        data2 = SOF + CMDID + data
+        decodeData = binascii.b2a_hex(data2).decode('utf-8')  # 转换为16进制表示，又将其解码成字符串
+        _, hexer = offical_Judge_Handler.crc16Add(decodeData)
+        ser.write(hexer)
+        time.sleep(0.03)
 
     @staticmethod
     def test_communicate(ser):
